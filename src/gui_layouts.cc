@@ -47,8 +47,10 @@ void SplitLayout::handle_event( const GuiEvent &e )
 				GuiVec2{ border_drag_width*2, size.h } :
 				GuiVec2{ size.w, border_drag_width*2 };
 
-			if( mouse_pos.x >= rect_pos.x && mouse_pos.x <= rect_pos.x + rect_size.w &&
-				mouse_pos.y >= rect_pos.y && mouse_pos.y <= rect_pos.y + rect_size.h )
+			if( mouse_pos.x >= rect_pos.x &&
+			    mouse_pos.x <= rect_pos.x + rect_size.w &&
+			    mouse_pos.y >= rect_pos.y &&
+			    mouse_pos.y <= rect_pos.y + rect_size.h )
 			{
 				split_bar.is_hilighted = true;
 				GuiEvent event;
@@ -75,7 +77,7 @@ void SplitLayout::handle_event( const GuiEvent &e )
 		GuiDirection border_touched = GuiDirection::UNDEFINED_DIRECTION;
 
 		if( mouse_pos.y >= top &&
-			mouse_pos.y < top + border_touch_width &&
+		    mouse_pos.y < top + border_touch_width &&
 		    split_axis != HORIZONTAL )
 		{
 			border_touched = NORTH;
@@ -99,7 +101,8 @@ void SplitLayout::handle_event( const GuiEvent &e )
 			border_touched = EAST;
 		}
 
-		if( border_touched != UNDEFINED_DIRECTION && !is_layout_splitted && is_splitting_allowed )
+		if( border_touched != UNDEFINED_DIRECTION &&
+			!is_layout_splitted && is_splitting_allowed )
 		{
 			split_bar.is_visible = true;
 			if( border_touched == NORTH || border_touched == SOUTH )
@@ -131,6 +134,7 @@ void SplitLayout::handle_event( const GuiEvent &e )
 	else if( e.type == WINDOW_BLUR )
 	{
 		split_bar.is_visible = false;
+		split_bar.is_hilighted = false;
 	}
 
 	else if( e.type == MOUSE_DOUBLE_CLICK )
@@ -149,27 +153,11 @@ void SplitLayout::handle_event( const GuiEvent &e )
 
 		if( is_layout_splitted )
 		{
-			int new_offset = (split_axis == VERTICAL) ?
-				split_bar.offset = static_cast<int>(size.w * split_bar.ratio) :
-				split_bar.offset = static_cast<int>(size.h * split_bar.ratio);
+			split_bar.offset = (split_axis == VERTICAL) ?
+				static_cast<int>(size.w * split_bar.ratio) :
+				static_cast<int>(size.h * split_bar.ratio);
 
-			const auto a_min = children[0]->get_minimum_size();
-			const auto b_min = children[1]->get_minimum_size();
-
-			const auto min_offset = (split_axis == VERTICAL) ? a_min.w : a_min.h;
-			const auto max_offset = (split_axis == VERTICAL) ? size.w - b_min.w : size.h - b_min.h;
-
-			if( new_offset > max_offset )
-			{
-				new_offset = max_offset;
-			}
-			if( new_offset < min_offset )
-			{
-				new_offset = min_offset;
-			}
-
-			split_bar.offset = new_offset;
-
+			fit_split_bar();
 			fit_children();
 
 			return;
@@ -195,26 +183,12 @@ void SplitLayout::handle_event( const GuiEvent &e )
 
 		if( split_bar.is_dragged )
 		{
-			int new_offset = (split_axis == VERTICAL) ?
+			split_bar.offset = (split_axis == VERTICAL) ?
 				mouse_pos.x - pos.x :
 				mouse_pos.y - pos.y;
 
-			const auto a_min = children[0]->get_minimum_size();
-			const auto b_min = children[1]->get_minimum_size();
+			fit_split_bar();
 
-			const auto min_offset = (split_axis == VERTICAL) ? a_min.w : a_min.h;
-			const auto max_offset = (split_axis == VERTICAL) ? size.w - b_min.w : size.h - b_min.h;
-
-			if( new_offset > max_offset )
-			{
-				new_offset = max_offset;
-			}
-			if( new_offset < min_offset )
-			{
-				new_offset = min_offset;
-			}
-
-			split_bar.offset = new_offset;
 			split_bar.ratio = (split_axis == VERTICAL) ?
 				(float)split_bar.offset / size.w :
 				(float)split_bar.offset / size.h;
@@ -348,6 +322,37 @@ void SplitLayout::split_layout()
 
 
 
+void SplitLayout::fit_split_bar()
+{
+	if( is_layout_splitted )
+	{
+		const auto a_min = children[0]->get_minimum_size();
+		const auto b_min = children[1]->get_minimum_size();
+
+		auto new_offset = split_bar.offset;
+
+		const auto min_offset = (split_axis == VERTICAL) ?
+			a_min.w :
+			a_min.h;
+
+		const auto max_offset = (split_axis == VERTICAL) ?
+			size.w - b_min.w :
+			size.h - b_min.h;
+
+		if( new_offset > max_offset )
+		{
+			new_offset = max_offset;
+		}
+		if( new_offset < min_offset )
+		{
+			new_offset = min_offset;
+		}
+
+		split_bar.offset = new_offset;
+	}
+}
+
+
 void SplitLayout::fit_children()
 {
 	if( !is_layout_splitted || children.size() < 2 )
@@ -388,5 +393,6 @@ void SplitLayout::fit_children()
 
 void SplitLayout::init_child( GuiElement *child )
 {
+
 }
 

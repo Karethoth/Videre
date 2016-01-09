@@ -45,6 +45,7 @@ struct SplitLayout : GuiElement
 
   protected:
 	void split_layout();
+	void fit_split_bar();
 	void fit_children();
 
 	virtual void init_child( GuiElement *child ) override;

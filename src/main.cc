@@ -85,9 +85,10 @@ void handle_sdl_event( const SDL_Event &e )
 void init_graphics()
 {
 	// Handle SDL initialization
-	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) )
+	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO) )
 	{
-		throw runtime_error{ string{ "SDL_Init() failed - " } + string{ SDL_GetError() } };
+		throw runtime_error{ string{ "SDL_Init() failed - " } +
+		      string{ SDL_GetError() } };
 	}
 
 	// Create a window
@@ -97,6 +98,8 @@ void init_graphics()
 	{
 		throw runtime_error{ string{ "Window creation failed" } };
 	}
+
+	SDL_SetWindowPosition( Globals::windows[0].window.get(), 50, 50 );
 }
 
 
@@ -147,7 +150,7 @@ int main( int argc, char **argv )
 	int const newMode = _setmode( _fileno( stdout ), _O_U8TEXT );
 	#endif
 
-	wstring_convert<codecvt_utf8<wchar_t>> converter;
+	//wstring_convert<codecvt_utf8<wchar_t>> converter;
 
 
 	try
