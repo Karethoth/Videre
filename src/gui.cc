@@ -85,11 +85,11 @@ void GuiElement::init_child( GuiElement *child )
 
 
 
-void GuiElement::render( SDL_Renderer *renderer ) const
+void GuiElement::render() const
 {
 	for( auto child : children )
 	{
-		child->render( renderer );
+		child->render();
 	}
 };
 

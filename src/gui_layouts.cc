@@ -1,4 +1,6 @@
 #include "gui_layuts.hh"
+#include "gui_gl.hh"
+
 #include <iostream>
 #include <string>
 #include <memory>
@@ -11,6 +13,8 @@ using namespace std;
 GridLayout::GridLayout( int _rows, int _columns )
 : rows( _rows ), columns( _columns )
 {
+	row_sizes = vector<GuiPixelsOrPercentage>( rows, {50, PERCENTS} );
+	col_sizes = vector<GuiPixelsOrPercentage>( columns, {50, PERCENTS} );
 }
 
 
@@ -102,7 +106,8 @@ void SplitLayout::handle_event( const GuiEvent &e )
 		}
 
 		if( border_touched != UNDEFINED_DIRECTION &&
-			!is_layout_splitted && is_splitting_allowed )
+		    !is_layout_splitted &&
+		    is_splitting_allowed )
 		{
 			split_bar.is_visible = true;
 			if( border_touched == NORTH || border_touched == SOUTH )
@@ -202,26 +207,26 @@ void SplitLayout::handle_event( const GuiEvent &e )
 
 
 
-void SplitLayout::render( SDL_Renderer *renderer ) const
+void SplitLayout::render() const
 {
-	GuiElement::render( renderer );
+	GuiElement::render();
 
 	if( is_layout_splitted )
 	{
 		if( split_bar.is_hilighted )
 		{
-			SDL_SetRenderDrawColor( renderer, 0, 255, 0, 127 );
+			glColor4f( 0, 1.0, 0, 0.5 );
 		}
 		else
 		{
-			SDL_SetRenderDrawColor( renderer, 255, 127, 0, 255 );
+			glColor4f( 1.0, 0.5, 0, 1.0 );
 		}
 
 
 		if( split_bar.axis == VERTICAL )
 		{
 			SDL_RenderDrawLine(
-				renderer,
+				nullptr,
 				pos.x + split_bar.offset,
 				pos.y,
 				pos.x + split_bar.offset,
@@ -231,7 +236,7 @@ void SplitLayout::render( SDL_Renderer *renderer ) const
 		else
 		{
 			SDL_RenderDrawLine(
-				renderer,
+				nullptr,
 				pos.x,
 				pos.y + split_bar.offset,
 				pos.x + size.w,
@@ -242,12 +247,12 @@ void SplitLayout::render( SDL_Renderer *renderer ) const
 
 	else if( split_bar.is_visible )
 	{
-		SDL_SetRenderDrawColor( renderer, 255, 0, 0, 127 );
+		glColor4f( 1.0, 0, 0, 0.5 );
 
 		if( split_bar.axis == VERTICAL )
 		{
 			SDL_RenderDrawLine(
-				renderer,
+				nullptr,
 				pos.x + split_bar.offset,
 				pos.y,
 				pos.x + split_bar.offset,
@@ -257,7 +262,7 @@ void SplitLayout::render( SDL_Renderer *renderer ) const
 		else
 		{
 			SDL_RenderDrawLine(
-				renderer,
+				nullptr,
 				pos.x,
 				pos.y + split_bar.offset,
 				pos.x + size.w,

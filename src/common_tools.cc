@@ -1,25 +1,50 @@
 #include "common_tools.hh"
 
-#include <fstream>
+#include <string>
+#include <cctype>
+#include <algorithm>
+#include <functional>
 
 using namespace std;
 using namespace tools;
 
 
-
 /* PLATFORM INDEPENDENT */
-wstring tools::read_file_contents( const string& filename )
+
+/* tools::str */
+wstring tools::str::ltrim( wstring s )
 {
-	ifstream in( filename, ios_base::in | ios_base::binary );
-	if( !in.is_open() )
-	{
-		throw runtime_error( "Couldn't open the file!" );
-	}
+	s.erase(
+		s.begin(),
+		std::find_if(
+			s.begin(),
+			s.end(),
+			not1( ptr_fun<int, int>( std::isspace ) )
+		)
+	);
 
-	wstring str{ istreambuf_iterator<char>( in ),
-		istreambuf_iterator<char>() };
+	return s;
+}
 
-	return str;
+
+wstring tools::str::rtrim( wstring s )
+{
+	s.erase(
+		std::find_if(
+			s.rbegin(),
+			s.rend(),
+			not1( ptr_fun<int, int>( std::isspace ) )
+		).base(),
+		s.end()
+	);
+
+	return s;
+}
+
+
+wstring tools::str::trim( wstring s )
+{
+	return ltrim( rtrim( s ) );
 }
 
 

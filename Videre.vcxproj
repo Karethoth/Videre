@@ -68,7 +68,18 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -120,9 +131,13 @@
   <ItemGroup>
     <ClCompile Include="src\common_tools.cc" />
     <ClCompile Include="src\gui.cc" />
+    <ClCompile Include="src\gui_gl.cc" />
     <ClCompile Include="src\gui_layouts.cc" />
     <ClCompile Include="src\main.cc" />
     <ClCompile Include="src\sdl2.cc" />
+    <ClCompile Include="src\settings.cc" />
+    <ClCompile Include="src\shader.cc" />
+    <ClCompile Include="src\shaderProgram.cc" />
     <ClCompile Include="src\window.cc" />
   </ItemGroup>
   <ItemGroup>
@@ -130,7 +145,11 @@
     <ClInclude Include="src\globals.hh" />
     <ClInclude Include="src\gui.hh" />
     <ClInclude Include="src\gui_layuts.hh" />
+    <ClInclude Include="src\gui_gl.hh" />
     <ClInclude Include="src\sdl2.hh" />
+    <ClInclude Include="src\settings.hh" />
+    <ClInclude Include="src\shader.hh" />
+    <ClInclude Include="src\shaderProgram.hh" />
     <ClInclude Include="src\window.hh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

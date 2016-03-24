@@ -1,7 +1,10 @@
 #include "window.hh"
+#include "gui_gl.hh"
 
 #include <iostream>
 #include <chrono>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 
 using namespace std;
@@ -18,7 +21,7 @@ Window::Window()
 		"Videre",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		size.w, size.h,
-		SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN
+		SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL
 	);
 
 	if( window_ptr )
@@ -29,25 +32,16 @@ Window::Window()
 	}
 	else
 	{
-		wcerr << "Window::Window() - SDL_CreateWindow() failed: "
-		     << SDL_GetError() << endl;
-
-		return;
+		throw runtime_error{ string{ "Window::Window() - SDL_CreateWindow() failed: " }.append( SDL_GetError() ) };
 	}
 
-
-	auto renderer_ptr = SDL_CreateRenderer( window_ptr, 0, SDL_RENDERER_ACCELERATED );
-	if( renderer_ptr )
+	auto createContext = SDL_GL_CreateContext( window.get() );
+	if( !createContext )
 	{
-		renderer = sdl2::RendererPtr( renderer_ptr );
+		wcout << SDL_GetError() << endl;
+		throw runtime_error{ string{ "Window::Window() - SDL_GL_CreateContext failed: " }.append( SDL_GetError() ) };
 	}
-	else
-	{
-		wcerr << "Window::Window() - SDL_CreateRenderer() failed: "
-		     << SDL_GetError() << endl;
 
-		return;
-	}
 }
 
 
@@ -56,7 +50,6 @@ Window::Window( Window&& other )
 {
 	using std::swap;
 	swap( window,   other.window );
-	swap( renderer, other.renderer );
 	swap( sdl_id,   other.sdl_id );
 	swap( closed,   other.closed );
 }
@@ -67,7 +60,6 @@ Window& Window::operator=( Window&& other )
 {
 	using std::swap;
 	swap( window,   other.window );
-	swap( renderer, other.renderer );
 	swap( sdl_id,   other.sdl_id );
 	swap( closed,   other.closed );
 
@@ -85,7 +77,7 @@ Window::~Window()
 
 bool Window::is_initialized() const
 {
-	return !closed && !!window && !!renderer;
+	return !closed && !!window;
 }
 
 
@@ -202,11 +194,30 @@ void Window::handle_sdl_event( const SDL_Event &e )
 
 
 
+
+
 void Window::render() const
 {
-	SDL_SetRenderDrawColor( renderer.get(), 0, 0, 0, 255 );
-	SDL_RenderClear( renderer.get() );
-	GuiElement::render( renderer.get() );
+	SDL_GL_MakeCurrent( window.get(), gl_context );
+	glClearColor( 1.0, 0.0, 0.0, 1.0 );
+	glClear( GL_COLOR_BUFFER_BIT );
+
+	auto projection = glm::ortho( 0, size.w, size.h, 0 );
+
+	//GuiElement::render();
+
+
+	glBegin( GL_QUADS );
+	glColor3f( 0.0, 1.0, 0.0 );
+	glVertex2f( -0.5, -0.5 );
+	glVertex2f(  0.5, -0.5 );
+	glVertex2f(  0.5,  0.5 );
+	glVertex2f( -0.5,  0.5 );
+	glEnd();
+
+	glFlush();
+
+	SDL_GL_SwapWindow( window.get() );
 }
 
 

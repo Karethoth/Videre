@@ -1,7 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
+#include <fstream>
+#include <iostream>
 #include <type_traits>
 
 namespace tools
@@ -94,7 +95,22 @@ constexpr auto make_defer( F func )
 
 
 
-std::wstring read_file_contents( const std::string& filename );
+template <typename T=std::wstring>
+T read_file_contents( const std::string& filename )
+{
+	ifstream in( filename, ios_base::in | ios_base::binary );
+	if( !in.is_open() )
+	{
+		throw runtime_error( std::string{ "Couldn't open the file: '" } + filename + "'" );
+	}
+
+	T str{
+		istreambuf_iterator<char>( in ),
+		istreambuf_iterator<char>()
+	};
+
+	return str;
+}
 
 
 // Directory listing
@@ -115,6 +131,14 @@ struct DirectoryItem
 
 
 std::vector<DirectoryItem> get_directory_listing( std::string path );
+
+
+namespace str
+{
+	std::wstring ltrim( std::wstring s );
+	std::wstring rtrim( std::wstring s );
+	std::wstring trim( std::wstring s );
+}; // namespace tools::str
 
 }; // namespace tools
 

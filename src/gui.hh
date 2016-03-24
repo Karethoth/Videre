@@ -43,6 +43,19 @@ GuiVec2 operator-( const GuiVec2 &a, const GuiVec2 &b );
 
 
 
+struct GuiPixelsOrPercentage
+{
+	GuiDistanceType type;
+	int val;
+
+	GuiPixelsOrPercentage(
+		int _val = 0,
+		const GuiDistanceType _type=PIXELS
+	) : val(_val), type(_type) {}
+};
+
+
+
 struct GuiEvent
 {
 	GuiEventType type;
@@ -114,7 +127,7 @@ struct GuiElement
 
 	virtual GuiVec2 get_minimum_size() const;
 
-	virtual void render( SDL_Renderer *renderer ) const;
+	virtual void render() const;
 	virtual void handle_event( const GuiEvent &e );
 
   protected:

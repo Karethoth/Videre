@@ -1,13 +1,17 @@
 #pragma once
 #include "gui.hh"
+#include <vector>
 
 namespace gui
 {
 
 struct GridLayout : GuiElement
 {
-	int rows;
-	int columns;
+	const int rows;
+	const int columns;
+
+	std::vector<GuiPixelsOrPercentage> row_sizes;
+	std::vector<GuiPixelsOrPercentage> col_sizes;
 
 	GridLayout( int _rows = 1, int _columns = 1 );
 
@@ -39,9 +43,10 @@ struct SplitLayout : GuiElement
 	} split_bar;
 
 	virtual void handle_event( const GuiEvent &e ) override;
-	virtual void render( SDL_Renderer *renderer ) const override;
+	virtual void render() const override;
 
 	virtual GuiVec2 get_minimum_size() const override;
+
 
   protected:
 	void split_layout();

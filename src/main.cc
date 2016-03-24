@@ -2,7 +2,10 @@
 #include "common_tools.hh"
 #include "window.hh"
 #include "globals.hh"
+#include "settings.hh"
 #include "gui_layuts.hh"
+#include "gui_gl.hh"
+#include "shaderProgram.hh"
 
 #include <mutex>
 #include <memory>
@@ -14,6 +17,7 @@
 #include <algorithm>
 #include <exception>
 
+#include <json.hpp>
 
 #ifdef _WIN32
 #include <io.h>
@@ -35,10 +39,12 @@ using namespace std;
 
 
 // Set up the Globals
-bool Globals::should_quit = false;
+atomic_bool Globals::should_quit{ false };
 
+mutex Globals::windows_mutex{};
 vector<gui::Window> Globals::windows{};
-mutex Globals::windows_mutex = {};
+map<string, ShaderProgram> Globals::shaders{};
+
 
 void handle_sdl_event( const SDL_Event &e )
 {
@@ -85,11 +91,19 @@ void handle_sdl_event( const SDL_Event &e )
 void init_graphics()
 {
 	// Handle SDL initialization
+
 	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO) )
 	{
 		throw runtime_error{ string{ "SDL_Init() failed - " } +
 		      string{ SDL_GetError() } };
 	}
+
+	// Set GL attributes
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
+
+	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
 
 	// Create a window
 	Globals::windows.emplace_back();
@@ -99,7 +113,38 @@ void init_graphics()
 		throw runtime_error{ string{ "Window creation failed" } };
 	}
 
+
 	SDL_SetWindowPosition( Globals::windows[0].window.get(), 50, 50 );
+
+	// Initialize GLEW
+	glewExperimental = GL_TRUE;
+	auto glewRes = glewInit();
+	if( glewRes != GLEW_OK )
+	{
+		wcout << (char*)glewGetErrorString( glewRes );
+		throw runtime_error{ string{ "glewInit failed" } };
+	}
+
+	SDL_GL_SetSwapInterval( 1 );
+
+	// Load default shader
+	map<string, GLuint> attributes;
+	map<string, string> shaderList;
+	shaderList["default"] = "data/shader";
+
+	for( const auto &shader : shaderList )
+	{
+		Shader vertexShader( GL_VERTEX_SHADER, shader.second + ".vert" );
+		Shader fragmentShader( GL_FRAGMENT_SHADER, shader.second + ".frag" );
+		Globals::shaders.emplace(
+			std::piecewise_construct,
+			std::forward_as_tuple( shader.first ),
+			std::forward_as_tuple( vertexShader, fragmentShader, attributes )
+		);
+
+		// Vertex and fragment shaders free themselves at this point, but as
+		// long as the shader program exists OpenGL won't do the final cleanup
+	}
 }
 
 
@@ -127,7 +172,6 @@ void update_windows()
 			continue;
 		}
 
-		SDL_RenderPresent( (*it).renderer.get() );
 		++it;
 	}
 }
@@ -150,8 +194,39 @@ int main( int argc, char **argv )
 	int const newMode = _setmode( _fileno( stdout ), _O_U8TEXT );
 	#endif
 
-	//wstring_convert<codecvt_utf8<wchar_t>> converter;
+	wstring_convert<codecvt_utf8<wchar_t>> converter;
 
+	function<void(void)> update_settings = [&]
+	{
+		wcout << "Updating settings..." << endl;
+
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+
+		try
+		{
+			auto data = tools::read_file_contents( "settings.json" );
+			auto bytes = converter.to_bytes( data );
+			auto settings = nlohmann::json::parse( bytes );
+			wcout << "WINDOW X: " << settings["window"]["sizeX"].get<int>() << endl;
+			wcout << "WINDOW Y: " << settings["window"]["sizeY"].get<int>() << endl;
+		}
+		catch( runtime_error &e )
+		{
+			wcout << "Exception: " << e.what() << endl;
+		}
+		catch( ... )
+		{
+			wcout << "Couldn't parse settings.json" << endl;
+		}
+	};
+
+	auto settings_updater = tools::run_when_file_updated(
+		"settings.json",
+		update_settings,
+		Globals::should_quit
+	);
+
+	auto settings_updater_waiter = tools::make_defer( [&] { settings_updater.join(); } );
 
 	try
 	{
@@ -185,7 +260,11 @@ int main( int argc, char **argv )
 
 	auto splittable = make_shared<gui::SplitLayout>();
 
-	Globals::windows[0].add_child( splittable );
+	//Globals::windows[0].add_child( splittable );
+
+	auto glElement = make_shared<gui::GlElement>( Globals::windows[0].window.get() );
+
+	Globals::windows[0].add_child( glElement );
 
 	/* Start main loop */
 	SDL_Event event;

@@ -9,9 +9,9 @@ namespace gui
 struct Window : GuiElement
 {
 	sdl2::WindowPtr   window;
-	sdl2::RendererPtr renderer;
 	uint32_t          sdl_id; // SDL Window Id
 	bool              closed;
+	SDL_GLContext     gl_context;
 
 
 	Window();
@@ -23,7 +23,7 @@ struct Window : GuiElement
 	bool is_initialized() const;
 	void handle_sdl_event( const SDL_Event &e );
 
-	void render() const;
+	void render() const override;
 
 	virtual void handle_event( const gui::GuiEvent &e ) override;
 
