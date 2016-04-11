@@ -130,6 +130,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\common_tools.cc" />
+    <ClCompile Include="src\gl_helpers.cc" />
     <ClCompile Include="src\gui.cc" />
     <ClCompile Include="src\gui_gl.cc" />
     <ClCompile Include="src\gui_layouts.cc" />
@@ -143,9 +144,11 @@
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh" />
     <ClInclude Include="src\globals.hh" />
+    <ClInclude Include="src\gl_helpers.hh" />
     <ClInclude Include="src\gui.hh" />
     <ClInclude Include="src\gui_layuts.hh" />
     <ClInclude Include="src\gui_gl.hh" />
+    <ClInclude Include="src\mesh.hh" />
     <ClInclude Include="src\sdl2.hh" />
     <ClInclude Include="src\settings.hh" />
     <ClInclude Include="src\shader.hh" />

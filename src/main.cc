@@ -113,8 +113,19 @@ void init_graphics()
 		throw runtime_error{ string{ "Window creation failed" } };
 	}
 
-
 	SDL_SetWindowPosition( Globals::windows[0].window.get(), 50, 50 );
+
+	auto& firstWindow = Globals::windows[0];
+
+	// Create SDL GL Context
+	firstWindow.gl_context = SDL_GL_CreateContext( firstWindow.window.get() );
+
+	if( firstWindow.gl_context == nullptr )
+	{
+		throw runtime_error( "SDL_GL_CreateContext failed" );
+	}
+
+	SDL_GL_MakeCurrent( firstWindow.window.get(), firstWindow.gl_context );
 
 	// Initialize GLEW
 	glewExperimental = GL_TRUE;
@@ -125,12 +136,19 @@ void init_graphics()
 		throw runtime_error{ string{ "glewInit failed" } };
 	}
 
+	// Get rid of the GL_INVALID_ENUM error caused by glewInit
+	gui::clear_gl_errors();
+
 	SDL_GL_SetSwapInterval( 1 );
 
 	// Load default shader
 	map<string, GLuint> attributes;
+	attributes["vertPos"] = 1;
 	map<string, string> shaderList;
 	shaderList["default"] = "data/shader";
+	shaderList["2d"] = "data/2d";
+
+	gui::any_gl_errors();
 
 	for( const auto &shader : shaderList )
 	{
@@ -141,6 +159,7 @@ void init_graphics()
 			std::forward_as_tuple( shader.first ),
 			std::forward_as_tuple( vertexShader, fragmentShader, attributes )
 		);
+		gui::any_gl_errors();
 
 		// Vertex and fragment shaders free themselves at this point, but as
 		// long as the shader program exists OpenGL won't do the final cleanup
@@ -260,7 +279,7 @@ int main( int argc, char **argv )
 
 	auto splittable = make_shared<gui::SplitLayout>();
 
-	//Globals::windows[0].add_child( splittable );
+	Globals::windows[0].add_child( splittable );
 
 	auto glElement = make_shared<gui::GlElement>( Globals::windows[0].window.get() );
 

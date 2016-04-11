@@ -1,9 +1,16 @@
 #include "window.hh"
 #include "gui_gl.hh"
+#include "globals.hh"
+#include "mesh.hh"
+#include "gl_helpers.hh"
 
+#include <math.h>
 #include <iostream>
 #include <chrono>
 #include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/vector_angle.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 
@@ -193,27 +200,61 @@ void Window::handle_sdl_event( const SDL_Event &e )
 }
 
 
+const GLfloat triangleVertexData[] = {
+	0.0f, 0.8f, 0.0f,
+	-0.8f,-0.8f, 0.0f,
+	0.8f,-0.8f, 0.0f,
+};
 
 
+glm::mat4 identityMP = glm::mat4(1);
+
+Mesh triangle;
 
 void Window::render() const
 {
 	SDL_GL_MakeCurrent( window.get(), gl_context );
-	glClearColor( 1.0, 0.0, 0.0, 1.0 );
+
+	auto shader = Globals::shaders.find( "2d" );
+	if( shader == Globals::shaders.end() )
+	{
+		return;
+	}
+
+	gui::any_gl_errors();
+	glUseProgram( shader->second.program );
+	gui::any_gl_errors();
+
+	if( !triangle.vao )
+	{
+		triangle.vao = 1;
+		triangle = CreateMesh(
+			shader->second,
+			triangleVertexData,
+			sizeof( triangleVertexData )
+		);
+	}
+
+	glClearColor( 0.2, 0.2, 0.2, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 
-	auto projection = glm::ortho( 0, size.w, size.h, 0 );
+	GuiElement::render();
 
-	//GuiElement::render();
+	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
+	// Render triangle
+	glBindVertexArray( triangle.vao );
 
-	glBegin( GL_QUADS );
-	glColor3f( 0.0, 1.0, 0.0 );
-	glVertex2f( -0.5, -0.5 );
-	glVertex2f(  0.5, -0.5 );
-	glVertex2f(  0.5,  0.5 );
-	glVertex2f( -0.5,  0.5 );
-	glEnd();
+	auto mpUniform = shader->second.GetUniform( "MP" );
+	glUniformMatrix4fv( mpUniform, 1, GL_FALSE, &identityMP[0][0] );
+
+	auto colorUniform = shader->second.GetUniform( "color" );
+	glUniform4f( colorUniform, 1.0, 1.0, 1.0, 1.0 );
+
+	glDrawArrays( GL_TRIANGLES, 0, triangle.vertex_count );
+
+	// Render line
+	gl::RenderLine2D( shader->second, { 0, 0 }, { -0.5, 0.0 } );
 
 	glFlush();
 
@@ -224,6 +265,11 @@ void Window::render() const
 
 void Window::handle_event( const GuiEvent &e )
 {
+	if( e.type == RESIZE )
+	{
+		SDL_GL_MakeCurrent( window.get(), gl_context );
+		glViewport( 0, 0, e.resize.size.w, e.resize.size.h );
+	}
 	for( auto child : children )
 	{
 		child->handle_event( e );

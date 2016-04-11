@@ -1,5 +1,7 @@
 #include "gui_layuts.hh"
 #include "gui_gl.hh"
+#include "globals.hh"
+#include "gl_helpers.hh"
 
 #include <iostream>
 #include <string>
@@ -206,27 +208,41 @@ void SplitLayout::handle_event( const GuiEvent &e )
 }
 
 
+void RenderLine( int x1, int y1, int x2, int y2 )
+{
+	auto windowSize = Globals::windows[0].size;
+	auto shader = Globals::shaders.find("2d");
+
+	auto a = gl::GuiToGlVec( { x1, y1 }, windowSize );
+	auto b = gl::GuiToGlVec( { x2, y2 }, windowSize );
+
+	gl::RenderLine2D( shader->second, a, b );
+}
+
 
 void SplitLayout::render() const
 {
 	GuiElement::render();
 
+	auto shader = Globals::shaders.find( "2d" );
+	glUseProgram( shader->second.program );
+	auto colorUniform = shader->second.GetUniform( "color" );
+
+
 	if( is_layout_splitted )
 	{
 		if( split_bar.is_hilighted )
 		{
-			glColor4f( 0, 1.0, 0, 0.5 );
+			glUniform4f( colorUniform, 0, 1.0, 0, 0.5 );
 		}
 		else
 		{
-			glColor4f( 1.0, 0.5, 0, 1.0 );
+			glUniform4f( colorUniform, 1.0, 0.5, 0, 1.0 );
 		}
-
 
 		if( split_bar.axis == VERTICAL )
 		{
-			SDL_RenderDrawLine(
-				nullptr,
+			RenderLine(
 				pos.x + split_bar.offset,
 				pos.y,
 				pos.x + split_bar.offset,
@@ -235,8 +251,7 @@ void SplitLayout::render() const
 		}
 		else
 		{
-			SDL_RenderDrawLine(
-				nullptr,
+			RenderLine(
 				pos.x,
 				pos.y + split_bar.offset,
 				pos.x + size.w,
@@ -247,12 +262,11 @@ void SplitLayout::render() const
 
 	else if( split_bar.is_visible )
 	{
-		glColor4f( 1.0, 0, 0, 0.5 );
+		glUniform4f( colorUniform, 1.0, 1.0, 1.0, 0.5 );
 
 		if( split_bar.axis == VERTICAL )
 		{
-			SDL_RenderDrawLine(
-				nullptr,
+			RenderLine(
 				pos.x + split_bar.offset,
 				pos.y,
 				pos.x + split_bar.offset,
@@ -261,8 +275,7 @@ void SplitLayout::render() const
 		}
 		else
 		{
-			SDL_RenderDrawLine(
-				nullptr,
+			RenderLine(
 				pos.x,
 				pos.y + split_bar.offset,
 				pos.x + size.w,

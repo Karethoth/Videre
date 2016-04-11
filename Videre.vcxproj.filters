@@ -45,6 +45,9 @@
     <ClCompile Include="src\shaderProgram.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\gl_helpers.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh">
@@ -75,6 +78,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\shader.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mesh.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gl_helpers.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

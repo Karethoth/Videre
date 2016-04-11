@@ -16,24 +16,25 @@ GlElement::GlElement( SDL_Window *window )
 	}
 
 	this->window = window;
-	gl_context = SDL_GL_CreateContext( window );
 }
 
 
 GlElement::~GlElement()
 {
+	/*
 	if( gl_context )
 	{
 		SDL_GL_DeleteContext( gl_context );
 	}
+	*/
 }
 
 
 void GlElement::render() const
 {
-	SDL_GL_MakeCurrent( window, gl_context );
-	glClearColor( 1.0, 0.0, 0.0, 1.0 );
-
-	glClear( GL_COLOR_BUFFER_BIT );
+	for( auto& child : children )
+	{
+		child->render();
+	}
 }
 

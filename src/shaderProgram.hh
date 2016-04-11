@@ -9,7 +9,7 @@ struct ShaderProgram
 	GLuint program;
 	GLint linked;
 
-	std::map<std::string, GLint>  uniforms;
+	mutable std::map<std::string, GLint> uniforms;
 	std::map<std::string, GLuint> attributes;
 
 	ShaderProgram(
@@ -19,5 +19,7 @@ struct ShaderProgram
 	);
 
 	~ShaderProgram();
+
+	const GLint ShaderProgram::GetUniform( const std::string& uniformName ) const;
 };
 

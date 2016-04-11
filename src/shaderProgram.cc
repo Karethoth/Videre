@@ -30,7 +30,6 @@ using namespace std;
 	// Link the shader program
 	glLinkProgram( program );
 	glGetProgramiv( program, GL_LINK_STATUS, &linked );
-
 	if( !linked )
 	{
 		GLint infoLen = 0;
@@ -67,6 +66,7 @@ using namespace std;
 
 ShaderProgram::~ShaderProgram()
 {
+	wcout << "Deleting program " << program << endl;
 	if( program )
 	{
 		glDeleteProgram( program );
@@ -76,15 +76,16 @@ ShaderProgram::~ShaderProgram()
 
 
 // Fetches the requested uniform location
-/*const GLint ShaderProgram::GetUniform( const std::string& uniformName )
+const GLint ShaderProgram::GetUniform( const std::string& uniformName ) const
 {
 	if( !program )
 	{
 		return 0;
 	}
-	std::map<std::string, GLint>::iterator it = uniforms.find( uniformName );
 
 	GLint uniform = -1;
+
+	auto it = uniforms.find( uniformName );
 	if( it != uniforms.end() )
 	{
 		uniform = it->second;
@@ -103,4 +104,4 @@ ShaderProgram::~ShaderProgram()
 
 	return uniform;
 }
-*/
+

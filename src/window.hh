@@ -13,7 +13,6 @@ struct Window : GuiElement
 	bool              closed;
 	SDL_GLContext     gl_context;
 
-
 	Window();
 	virtual ~Window();
 

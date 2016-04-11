@@ -18,7 +18,6 @@ using namespace std;
 Shader::Shader( GLenum type, const string& filepath ) : type( type ), compiled( 0 )
 {
 	string shaderSource = tools::read_file_contents<string>( filepath );
-
 	shader = glCreateShader( type );
 	if( !shader )
 	{
