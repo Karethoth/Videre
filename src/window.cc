@@ -199,17 +199,7 @@ void Window::handle_sdl_event( const SDL_Event &e )
 	}
 }
 
-
-const GLfloat triangleVertexData[] = {
-	0.0f, 0.8f, 0.0f,
-	-0.8f,-0.8f, 0.0f,
-	0.8f,-0.8f, 0.0f,
-};
-
-
-glm::mat4 identityMP = glm::mat4(1);
-
-Mesh triangle;
+const glm::mat4 identityMP = glm::mat4(1);
 
 void Window::render() const
 {
@@ -225,39 +215,12 @@ void Window::render() const
 	glUseProgram( shader->second.program );
 	gui::any_gl_errors();
 
-	if( !triangle.vao )
-	{
-		triangle.vao = 1;
-		triangle = CreateMesh(
-			shader->second,
-			triangleVertexData,
-			sizeof( triangleVertexData )
-		);
-	}
-
 	glClearColor( 0.2, 0.2, 0.2, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 
 	GuiElement::render();
 
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-
-	// Render triangle
-	glBindVertexArray( triangle.vao );
-
-	auto mpUniform = shader->second.GetUniform( "MP" );
-	glUniformMatrix4fv( mpUniform, 1, GL_FALSE, &identityMP[0][0] );
-
-	auto colorUniform = shader->second.GetUniform( "color" );
-	glUniform4f( colorUniform, 1.0, 1.0, 1.0, 1.0 );
-
-	glDrawArrays( GL_TRIANGLES, 0, triangle.vertex_count );
-
-	// Render line
-	gl::RenderLine2D( shader->second, { 0, 0 }, { -0.5, 0.0 } );
-
 	glFlush();
-
 	SDL_GL_SwapWindow( window.get() );
 }
 
