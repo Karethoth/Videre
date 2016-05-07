@@ -13,13 +13,13 @@ struct ShaderProgram
 	std::map<std::string, GLuint> attributes;
 
 	ShaderProgram(
-		const Shader &vertexShader,
-		const Shader &fragmentShader,
+		const Shader &vertex_shader,
+		const Shader &fragment_shader,
 		std::map<std::string, GLuint> attributes
 	);
 
 	~ShaderProgram();
 
-	const GLint ShaderProgram::GetUniform( const std::string& uniformName ) const;
+	const GLint ShaderProgram::get_uniform( const std::string& uniform_name ) const;
 };
 

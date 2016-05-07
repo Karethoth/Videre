@@ -2,6 +2,12 @@
 
 #ifdef _WIN32
 #pragma comment(lib, "opengl32.lib")
+
+#ifdef _DEBUG
+	#pragma comment(lib, "freetype26d.lib")
+#else
+	#pragma comment(lib, "freetype26.lib")
+#endif
 #endif
 
 using namespace gui;
@@ -36,5 +42,25 @@ void GlElement::render() const
 	{
 		child->render();
 	}
+}
+
+
+bool gui::any_gl_errors()
+{
+	bool had_error = false;
+	GLenum err;
+	while( (err = glGetError()) != GL_NO_ERROR )
+	{
+		had_error = true;
+		std::wcout << "gl_error: " << err << std::endl;
+	}
+	return had_error;
+}
+
+
+void gui::clear_gl_errors()
+{
+	GLenum err;
+	while( (err = glGetError()) != GL_NO_ERROR ) {}
 }
 

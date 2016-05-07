@@ -91,7 +91,7 @@ void GuiElement::render() const
 	{
 		child->render();
 	}
-};
+}
 
 
 
@@ -115,5 +115,5 @@ void GuiElement::handle_event( const GuiEvent &e )
 	{
 		child->handle_event( e );
 	}
-};
+}
 

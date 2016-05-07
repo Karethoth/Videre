@@ -4,13 +4,28 @@
 #include "shaderProgram.hh"
 #include "gui.hh"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 namespace gl
 {
-	void RenderLine2D( const ShaderProgram &shader, glm::vec2 a, glm::vec2 b );
+	void render_line_2d(
+		const ShaderProgram &shader,
+		const glm::vec2 &window_size,
+		glm::vec2 a,
+		glm::vec2 b
+	);
 
-	glm::vec2 GuiToGlVec(
-		const gui::GuiVec2 &coord,
-		const gui::GuiVec2 &windowSize
+	void render_text_2d(
+		const ShaderProgram &shader,
+		const glm::vec2 &window_size,
+		const std::string &text,
+		glm::vec2 pos,
+		glm::vec2 scale,
+		FT_Face face
+	);
+
+	glm::vec2 gui_to_gl_vec(
+		const gui::GuiVec2 &coord
 	);
 }

@@ -14,6 +14,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
+#pragma execution_character_set("utf-8")
+
 using namespace std;
 using namespace gui;
 
@@ -196,6 +198,16 @@ void Window::handle_sdl_event( const SDL_Event &e )
 			handle_event( gui_event );
 			break;
 
+		case SDL_TEXTINPUT:
+			wcout << "TEXT: " << e.text.text << endl;
+			break;
+
+		case SDL_TEXTEDITING:
+			SDL_Rect rect = { 100, 100, 200, 200 };
+			SDL_SetTextInputRect( &rect );
+			wcout << "EDITING: " << e.edit.text << endl;
+			break;
+
 	}
 }
 
@@ -211,14 +223,24 @@ void Window::render() const
 		return;
 	}
 
+	glClearColor( 0.2f, 0.2f, 0.2f, 1.0f );
+	glClear( GL_COLOR_BUFFER_BIT );
+
+	GuiElement::render();
+
 	gui::any_gl_errors();
 	glUseProgram( shader->second.program );
 	gui::any_gl_errors();
 
-	glClearColor( 0.2, 0.2, 0.2, 1.0 );
-	glClear( GL_COLOR_BUFFER_BIT );
-
-	GuiElement::render();
+	auto font = Globals::freetype_faces.find( "default" );
+	if( font != Globals::freetype_faces.end() )
+	{
+		FT_Set_Pixel_Sizes( font->second, 0, 50 );
+		auto text = "Testing: \xE2\x88\x83y \xE2\x88\x80x \xC2\xAC(x \xE2\x89\xBA y)";
+		auto text2 = "\xEC\xA1\xB0\xEC\x84\xA0\xEA\xB8\x80\xE3\x82\x8F\xE3\x81\x9F\xE3\x81\x97\xE7\xA7\x81";
+		gl::render_text_2d( shader->second, { size.w, size.h }, text, { 00, 50 }, { 1,1 }, font->second );
+		gl::render_text_2d( shader->second, { size.w, size.h }, text2, { 00, 150 }, { 1,1 }, font->second );
+	}
 
 	glFlush();
 	SDL_GL_SwapWindow( window.get() );

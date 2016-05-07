@@ -208,15 +208,15 @@ void SplitLayout::handle_event( const GuiEvent &e )
 }
 
 
-void RenderLine( int x1, int y1, int x2, int y2 )
+void render_line( int x1, int y1, int x2, int y2 )
 {
 	auto windowSize = Globals::windows[0].size;
 	auto shader = Globals::shaders.find("2d");
 
-	auto a = gl::GuiToGlVec( { x1, y1 }, windowSize );
-	auto b = gl::GuiToGlVec( { x2, y2 }, windowSize );
+	glm::vec2 a = { x1, windowSize.h - y1 };
+	glm::vec2 b = { x2, windowSize.h - y2 };
 
-	gl::RenderLine2D( shader->second, a, b );
+	gl::render_line_2d( shader->second, { windowSize.w, windowSize.h }, a, b );
 }
 
 
@@ -226,8 +226,9 @@ void SplitLayout::render() const
 
 	auto shader = Globals::shaders.find( "2d" );
 	glUseProgram( shader->second.program );
-	auto colorUniform = shader->second.GetUniform( "color" );
-
+	auto colorUniform = shader->second.get_uniform( "color" );
+	auto texturedUniform = shader->second.get_uniform( "textured" );
+	glUniform1i( texturedUniform, 0 );
 
 	if( is_layout_splitted )
 	{
@@ -242,7 +243,7 @@ void SplitLayout::render() const
 
 		if( split_bar.axis == VERTICAL )
 		{
-			RenderLine(
+			render_line(
 				pos.x + split_bar.offset,
 				pos.y,
 				pos.x + split_bar.offset,
@@ -251,7 +252,7 @@ void SplitLayout::render() const
 		}
 		else
 		{
-			RenderLine(
+			render_line(
 				pos.x,
 				pos.y + split_bar.offset,
 				pos.x + size.w,
@@ -266,7 +267,7 @@ void SplitLayout::render() const
 
 		if( split_bar.axis == VERTICAL )
 		{
-			RenderLine(
+			render_line(
 				pos.x + split_bar.offset,
 				pos.y,
 				pos.x + split_bar.offset,
@@ -275,7 +276,7 @@ void SplitLayout::render() const
 		}
 		else
 		{
-			RenderLine(
+			render_line(
 				pos.x,
 				pos.y + split_bar.offset,
 				pos.x + size.w,

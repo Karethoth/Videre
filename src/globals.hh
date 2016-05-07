@@ -5,8 +5,11 @@
 
 #include <map>
 #include <mutex>
-#include <vector>
 #include <atomic>
+#include <vector>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 
 struct Globals
@@ -17,5 +20,8 @@ struct Globals
 	static std::vector<gui::Window> windows;
 
 	static std::map<std::string, ShaderProgram> shaders;
+
+	static FT_Library freetype;
+	static std::map<std::string, FT_Face> freetype_faces;
 };
 

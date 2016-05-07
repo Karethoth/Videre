@@ -17,15 +17,15 @@ using namespace std;
 
 Shader::Shader( GLenum type, const string& filepath ) : type( type ), compiled( 0 )
 {
-	string shaderSource = tools::read_file_contents<string>( filepath );
+	string shader_source = tools::read_file_contents<string>( filepath );
 	shader = glCreateShader( type );
 	if( !shader )
 	{
 		throw runtime_error( "glCreateShader failed" );
 	}
 
-	const GLchar *sourcePtr = (GLchar*)shaderSource.c_str();
-	glShaderSource( shader, 1, &sourcePtr, NULL );
+	const GLchar *source_ptr = (GLchar*)shader_source.c_str();
+	glShaderSource( shader, 1, &source_ptr, NULL );
 
 	glCompileShader( shader );
 	glGetShaderiv( shader, GL_COMPILE_STATUS, &compiled );
@@ -35,24 +35,24 @@ Shader::Shader( GLenum type, const string& filepath ) : type( type ), compiled( 
 		return;
 	}
 
-	GLint infoLen = 0;
-	glGetShaderiv( shader, GL_INFO_LOG_LENGTH, &infoLen );
-	if( infoLen > 1 )
+	GLint info_len = 0;
+	glGetShaderiv( shader, GL_INFO_LOG_LENGTH, &info_len );
+	if( info_len > 1 )
 	{
-		char* infoLog = new char[sizeof( char )*infoLen];
-		string errorMsg;
+		char* info_log = new char[sizeof( char )*info_len];
+		string error_msg;
 
-		if( infoLog )
+		if( info_log )
 		{
-			glGetShaderInfoLog( shader, infoLen, NULL, infoLog );
-			errorMsg = "Error compiling shader: " + string( infoLog );
-			delete[] infoLog;
+			glGetShaderInfoLog( shader, info_len, NULL, info_log );
+			error_msg = "Error compiling shader: " + string( info_log );
+			delete[] info_log;
 		}
 		else
 		{
-			errorMsg = "Error compiling shader and also failed to allocate memory for infolog";
+			error_msg = "Error compiling shader and also failed to allocate memory for infolog";
 		}
-		throw runtime_error( errorMsg );
+		throw runtime_error( error_msg );
 	}
 
 	glDeleteShader( shader );
@@ -65,3 +65,4 @@ Shader::~Shader()
 {
 	glDeleteShader( shader );
 }
+

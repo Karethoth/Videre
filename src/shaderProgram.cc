@@ -6,8 +6,8 @@
 using namespace std;
 
  ShaderProgram::ShaderProgram(
-	const Shader& vertexShader,
-	const Shader& fragmentShader,
+	const Shader& vertex_shader,
+	const Shader& fragment_shader,
 	std::map<std::string, GLuint> attributes )
 {
 	linked = 0;
@@ -18,8 +18,8 @@ using namespace std;
 	}
 
 	// Attach the shaders
-	glAttachShader( program, vertexShader.shader );
-	glAttachShader( program, fragmentShader.shader );
+	glAttachShader( program, vertex_shader.shader );
+	glAttachShader( program, fragment_shader.shader );
 
 	// Bind attribute locations as requested
 	for( auto& attr : attributes )
@@ -32,24 +32,24 @@ using namespace std;
 	glGetProgramiv( program, GL_LINK_STATUS, &linked );
 	if( !linked )
 	{
-		GLint infoLen = 0;
-		glGetProgramiv( program, GL_INFO_LOG_LENGTH, &infoLen );
-		if( infoLen > 1 )
+		GLint info_len = 0;
+		glGetProgramiv( program, GL_INFO_LOG_LENGTH, &info_len );
+		if( info_len > 1 )
 		{
-			char* infoLog = new char[sizeof( char )*infoLen];
-			std::string errorMsg;
+			char* info_log = new char[sizeof( char )*info_len];
+			std::string error_msg;
 
-			if( infoLog )
+			if( info_log )
 			{
-				glGetProgramInfoLog( program, infoLen, NULL, infoLog );
-				errorMsg = "Error linking shader program: " + std::string( infoLog );
-				delete[] infoLog;
+				glGetProgramInfoLog( program, info_len, NULL, info_log );
+				error_msg = "Error linking shader program: " + std::string( info_log );
+				delete[] info_log;
 			}
 			else
 			{
-				errorMsg = "Error linking shader program and also failed to allocate memory for infolog";
+				error_msg = "Error linking shader program and also failed to allocate memory for infolog";
 			}
-			throw runtime_error( errorMsg );
+			throw runtime_error( error_msg );
 		}
 
 		glDeleteProgram( program );
@@ -76,7 +76,7 @@ ShaderProgram::~ShaderProgram()
 
 
 // Fetches the requested uniform location
-const GLint ShaderProgram::GetUniform( const std::string& uniformName ) const
+const GLint ShaderProgram::get_uniform( const std::string& uniform_name ) const
 {
 	if( !program )
 	{
@@ -85,21 +85,21 @@ const GLint ShaderProgram::GetUniform( const std::string& uniformName ) const
 
 	GLint uniform = -1;
 
-	auto it = uniforms.find( uniformName );
+	auto it = uniforms.find( uniform_name );
 	if( it != uniforms.end() )
 	{
 		uniform = it->second;
 	}
 	else
 	{
-		uniform = glGetUniformLocation( program, uniformName.c_str() );
-		uniforms[uniformName] = uniform;
+		uniform = glGetUniformLocation( program, uniform_name.c_str() );
+		uniforms[uniform_name] = uniform;
 	}
 
 	if( uniform == -1 )
 	{
 		throw runtime_error( "Error: Tried to get location of shader uniform '"
-			+ uniformName + "', which doesn't exist." );
+			+ uniform_name + "', which doesn't exist." );
 	}
 
 	return uniform;
