@@ -148,11 +148,13 @@
     <ClInclude Include="src\gui.hh" />
     <ClInclude Include="src\gui_layuts.hh" />
     <ClInclude Include="src\gui_gl.hh" />
+    <ClInclude Include="src\gui_text.hh" />
     <ClInclude Include="src\mesh.hh" />
     <ClInclude Include="src\sdl2.hh" />
     <ClInclude Include="src\settings.hh" />
     <ClInclude Include="src\shader.hh" />
     <ClInclude Include="src\shaderProgram.hh" />
+    <ClInclude Include="src\typedefs.hh" />
     <ClInclude Include="src\window.hh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

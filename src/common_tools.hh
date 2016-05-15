@@ -8,12 +8,6 @@
 namespace tools
 {
 
-// owner<T> pointer alias
-template<typename T>
-using owner = T;
-
-
-
 // can_call compile time type check
 struct can_call_test
 {

@@ -1,5 +1,6 @@
 #pragma once
 #include "sdl2.hh"
+#include <glm/glm.hpp>
 #include <vector>
 
 namespace gui
@@ -35,6 +36,7 @@ struct GuiVec2
 	};
 
 	GuiVec2( int _x=0, int _y=0 ) : x( _x ), y( _y ) {};
+	glm::vec2 to_gl_vec() { return { x, y }; };
 };
 
 

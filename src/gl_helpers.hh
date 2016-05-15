@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include "shaderProgram.hh"
 #include "gui.hh"
+#include "typedefs.hh"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -16,16 +17,18 @@ namespace gl
 		glm::vec2 b
 	);
 
-	void render_text_2d(
+	// Renders text and returns the width of rendered string
+	size_t render_text_2d(
 		const ShaderProgram &shader,
 		const glm::vec2 &window_size,
-		const std::string &text,
+		const string_u8 &text,
 		glm::vec2 pos,
 		glm::vec2 scale,
 		FT_Face face
 	);
 
-	glm::vec2 gui_to_gl_vec(
-		const gui::GuiVec2 &coord
+	glm::vec2 get_text_bounding_box(
+		const string_u8 &text,
+		FT_Face face
 	);
 }

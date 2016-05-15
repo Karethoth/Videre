@@ -86,5 +86,11 @@
     <ClInclude Include="src\gl_helpers.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\gui_text.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\typedefs.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

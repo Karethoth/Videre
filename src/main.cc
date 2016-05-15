@@ -335,7 +335,6 @@ int main( int argc, char **argv )
 	auto fps_start_time = chrono::system_clock::now();
 	auto fps_frames_left = fps_step_count;
 	float fps = 1.f;
-
 	while( !Globals::should_quit )
 	{
 		if( fps > fps_cap )

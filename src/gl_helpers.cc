@@ -81,7 +81,32 @@ struct GlCharacter
 	GLuint advance;
 };
 
-static map<unsigned long, GlCharacter> gl_characters;
+struct FontFaceIdentity
+{
+	const FT_Face face_ptr;
+	const size_t size;
+
+	FontFaceIdentity( const FT_Face font_face_ptr )
+		: face_ptr( font_face_ptr ), size( font_face_ptr->size->metrics.height ) {}
+
+	bool operator< ( const FontFaceIdentity &other) const
+	{
+		if( face_ptr < other.face_ptr )
+		{
+			return true;
+		}
+		else if( face_ptr == other.face_ptr &&
+		         size < other.size )
+		{
+			return true;
+		}
+		else return false;
+	}
+};
+
+
+using FontFaceContents = map<unsigned long, GlCharacter>;
+static map<FontFaceIdentity, FontFaceContents> font_face_library;
 
 
 size_t get_octet_count( const char byte )
@@ -166,7 +191,6 @@ unsigned long read_next_character( const char *str, const char * const end, size
 
 GlCharacter add_character( FT_Face face, unsigned long c )
 {
-	FT_Select_Charmap( face, FT_Encoding::FT_ENCODING_WANSUNG );
 	auto glyph_index = FT_Get_Char_Index( face, c );
 	if( FT_Load_Char( face, c, FT_LOAD_RENDER ) )
 	{
@@ -185,7 +209,6 @@ GlCharacter add_character( FT_Face face, unsigned long c )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	gui::any_gl_errors();
 
 	glTexImage2D(
 		GL_TEXTURE_2D,
@@ -198,8 +221,9 @@ GlCharacter add_character( FT_Face face, unsigned long c )
 		GL_UNSIGNED_BYTE,
 		face->glyph->bitmap.buffer
 	);
-	glBindTexture( GL_TEXTURE_2D, 0 );
 	gui::any_gl_errors();
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	// Now store character for later use
 	GlCharacter character = {
@@ -209,15 +233,14 @@ GlCharacter add_character( FT_Face face, unsigned long c )
 		(GLuint)face->glyph->advance.x
 	};
 
-	gl_characters.insert( { c, character } );
-	gui::any_gl_errors();
+	font_face_library[FontFaceIdentity( face )].insert( { c, character } );
 	return character;
 }
 
-void gl::render_text_2d(
+size_t gl::render_text_2d(
 	const ShaderProgram &shader,
 	const glm::vec2 &window_size,
-	const std::string &text,
+	const string_u8 &text,
 	glm::vec2 pos,
 	glm::vec2 scale,
 	FT_Face face )
@@ -227,8 +250,6 @@ void gl::render_text_2d(
 
 	static GLuint vao;
 	static GLuint vbo;
-
-	glUseProgram( shader.program );
 
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -266,6 +287,7 @@ void gl::render_text_2d(
 	unsigned long current_character = 0;
 	size_t bytes_read = 0;
 	float caret_pos_x = pos.x;
+	size_t offset = 0;
 
 	glBindVertexArray( vao );
 	glBindBuffer( GL_ARRAY_BUFFER, vbo );
@@ -273,16 +295,18 @@ void gl::render_text_2d(
 
 	glActiveTexture( GL_TEXTURE0 );
 	gui::any_gl_errors();
+
+	const auto& font_face_contents = font_face_library[{ face }];
 	
 	while( (current_character = read_next_character(str_ptr, str_end, bytes_read)) )
 	{
-		gui::any_gl_errors();
 		str_ptr += bytes_read;
+		const float caret_pos_x = pos.x + offset;
 
 		// Find or create the character
 		GlCharacter c;
-		auto it = gl_characters.find( current_character );
-		if( it != gl_characters.end() )
+		auto it = font_face_contents.find( current_character );
+		if( it != font_face_contents.end() )
 		{
 			c = it->second;
 		}
@@ -317,29 +341,14 @@ void gl::render_text_2d(
 		gui::any_gl_errors();
 
 		glDrawArrays( GL_TRIANGLES, 0, 6 );
-		caret_pos_x += (c.advance >> 6) * scale.x; // Bitshift by 6 to get pixels
+		
+		// Bitshift by 6 to get pixels
+		offset += static_cast<int>((c.advance >> 6) * scale.x);
 	}
-	//glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	glBindVertexArray( 0 );
-	glUseProgram( 0 );
-	/*
-	GLuint vbo;
-	glCreateBuffers( 1, &vbo );
-	glBindBuffer( GL_VERTEX_ARRAY, vbo );
-	*/
-}
 
-
-glm::vec2 gl::gui_to_gl_vec(
-	const gui::GuiVec2 &coord
-)
-{
-	glm::vec2 val = {
-		coord.x,
-		coord.y
-	};
-
-	return val;
+	return offset;
 }
 
