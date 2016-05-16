@@ -17,6 +17,13 @@ namespace gl
 		glm::vec2 b
 	);
 
+	void render_quad_2d(
+		const ShaderProgram &shader,
+		const glm::vec2 &window_size,
+		glm::vec2 pos,
+		glm::vec2 size
+	);
+
 	// Renders text and returns the width of rendered string
 	size_t render_text_2d(
 		const ShaderProgram &shader,

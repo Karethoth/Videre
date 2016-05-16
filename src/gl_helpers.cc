@@ -73,6 +73,46 @@ void gl::render_line_2d( const ShaderProgram &shader, const glm::vec2 &window_si
 
 
 
+void gl::render_quad_2d( const ShaderProgram &shader, const glm::vec2 &window_size, glm::vec2 pos, glm::vec2 size )
+{
+	static const GLfloat quad_vertex_data[] = {
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f
+	};
+
+	glUseProgram( shader.program );
+
+	static Mesh quad;
+
+	if( !quad.vao )
+	{
+		quad = create_mesh( shader, quad_vertex_data, sizeof( quad_vertex_data ) );
+	}
+
+	glm::mat4 model = glm::ortho<float>(0, window_size.x, 0, window_size.y);
+	model = glm::translate( model, glm::vec3( pos.x, window_size.y - pos.y, 0.0f ) );
+	model = glm::scale( model, glm::vec3( size.x, -size.y, 1.0f ) );
+	auto mp = model;
+
+	glBindVertexArray( quad.vao );
+	glBindBuffer( GL_ARRAY_BUFFER, quad.vbo );
+
+	auto mpUniform = shader.get_uniform( "MP" );
+	glUniformMatrix4fv( mpUniform, 1, GL_FALSE, &mp[0][0] );
+
+	auto texturedUniform = shader.get_uniform( "textured" );
+	glUniform1i( texturedUniform, 0 );
+	
+	glDrawArrays( GL_TRIANGLES, 0, quad.vertex_count );
+	glBindVertexArray( 0 );
+}
+
+
+
 struct GlCharacter
 {
 	GLuint gl_texture;

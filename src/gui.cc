@@ -1,4 +1,6 @@
 #include "gui.hh"
+#include "gl_helpers.hh"
+#include "globals.hh"
 #include <iostream>
 #include <exception>
 
@@ -87,7 +89,17 @@ void GuiElement::init_child( GuiElement *child )
 
 void GuiElement::render() const
 {
-	for( auto child : children )
+	if( color_bg.a > 0.f )
+	{
+		auto shader = Globals::shaders.find( "2d" );
+		glUseProgram( shader->second.program );
+		auto colorUniform = shader->second.get_uniform( "color" );
+		glUniform4f( colorUniform, color_bg.r, color_bg.g, color_bg.b, color_bg.a );
+		auto window_size = get_root()->size;
+		gl::render_quad_2d( shader->second, window_size.to_gl_vec(), pos.to_gl_vec(), size.to_gl_vec() );
+	}
+
+	for( auto& child : children )
 	{
 		child->render();
 	}
@@ -119,9 +131,9 @@ void GuiElement::handle_event( const GuiEvent &e )
 
 
 
-GuiElement *GuiElement::get_root()
+GuiElement *GuiElement::get_root() const
 {
-	auto current = this;
+	auto current = this->parent;
 	while( current->parent )
 	{
 		current = current->parent;

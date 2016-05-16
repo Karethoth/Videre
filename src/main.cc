@@ -320,10 +320,17 @@ int main( int argc, char **argv )
 	grid->col_sizes = { {0, gui::AUTO}, {100, gui::PIXELS} };
 	grid->row_sizes = { {0, gui::AUTO}, {100, gui::PIXELS} };
 
+
+	auto colored_split1 = make_shared<gui::SplitLayout>();
+	colored_split1->color_bg = { 0.8, 0.5, 0.5, 0.5 };
+	grid->add_child( colored_split1 );
+
 	grid->add_child( make_shared<gui::SplitLayout>() );
 	grid->add_child( make_shared<gui::SplitLayout>() );
-	grid->add_child( make_shared<gui::SplitLayout>() );
-	grid->add_child( make_shared<gui::SplitLayout>() );
+
+	auto colored_split2 = make_shared<gui::SplitLayout>();
+	colored_split2->color_bg = { 0.8, 0.5, 0.5, 1.0 };
+	grid->add_child( colored_split2 );
 
 	Globals::windows[0].add_child( grid );
 

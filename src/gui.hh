@@ -36,7 +36,7 @@ struct GuiVec2
 	};
 
 	GuiVec2( int _x=0, int _y=0 ) : x( _x ), y( _y ) {};
-	glm::vec2 to_gl_vec() { return { x, y }; };
+	glm::vec2 to_gl_vec() const { return { x, y }; };
 };
 
 
@@ -119,6 +119,7 @@ struct GuiElement
 	GuiElement *parent = nullptr;
 	std::vector<GuiElementPtr> children;
 
+	glm::vec4 color_bg = { 0, 0, 0, 0 };
 
 	GuiElement() {};
 	virtual ~GuiElement() {};
@@ -134,7 +135,7 @@ struct GuiElement
 
   protected:
 	virtual void init_child( GuiElement *child );
-	virtual GuiElement *get_root();
+	virtual GuiElement *get_root() const;
 };
 
 } // namespace gui
