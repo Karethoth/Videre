@@ -30,6 +30,7 @@ struct GridLayout : GuiElement
 
 	virtual void handle_event( const GuiEvent &e ) override;
 	virtual void render() const override;
+	virtual GuiVec2 get_minimum_size() const override;
 
   protected:
 	int auto_width;

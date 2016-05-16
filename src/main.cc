@@ -316,9 +316,16 @@ int main( int argc, char **argv )
 	#endif
 	#endif
 
-	auto splittable = make_shared<gui::SplitLayout>();
+	auto grid = make_shared<gui::GridLayout>(2, 2);
+	grid->col_sizes = { {0, gui::AUTO}, {100, gui::PIXELS} };
+	grid->row_sizes = { {0, gui::AUTO}, {100, gui::PIXELS} };
 
-	Globals::windows[0].add_child( splittable );
+	grid->add_child( make_shared<gui::SplitLayout>() );
+	grid->add_child( make_shared<gui::SplitLayout>() );
+	grid->add_child( make_shared<gui::SplitLayout>() );
+	grid->add_child( make_shared<gui::SplitLayout>() );
+
+	Globals::windows[0].add_child( grid );
 
 	auto glElement = make_shared<gui::GlElement>( Globals::windows[0].window.get() );
 

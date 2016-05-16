@@ -23,12 +23,24 @@ GridLayout::GridLayout( int _rows, int _columns )
 
 void GridLayout::handle_event( const GuiEvent &e )
 {
-	if( e.type != RESIZE && e.type != MOVE )
+	switch( e.type )
 	{
-		GuiElement::handle_event( e );
-		return;
+		case RESIZE:
+			size = e.resize.size;
+			update_dimensions();
+			fit_children();
+			break;
+
+		case MOVE:
+			pos = e.move.pos;
+			update_dimensions();
+			fit_children();
+			break;
+
+		default:
+			GuiElement::handle_event( e );
+			return;
 	}
-	update_dimensions();
 }
 
 
@@ -100,8 +112,8 @@ void GridLayout::update_dimensions()
 
 void GridLayout::fit_children()
 {
-	int current_x = 0;
-	int current_y = 0;
+	int current_x = pos.x;
+	int current_y = pos.y;
 
 	GuiVec2 position{0,0};
 	GuiEvent event;
@@ -130,7 +142,7 @@ void GridLayout::fit_children()
 				break;
 		}
 
-		auto row_height = col_sizes[current_x];
+		auto row_height = row_sizes[current_y];
 		switch( row_height.type )
 		{
 			case PIXELS:
@@ -148,18 +160,73 @@ void GridLayout::fit_children()
 		// Resize the child
 		event.type = RESIZE;
 		event.resize.size = child_size;
+		child->handle_event( event );
 
 		// Update position
+		position.x += child_size.w;
+
 		current_x++;
-		if( current_x > columns )
+		if( current_x >= columns )
 		{
-			pos.x = 0;
-			pos.y = 
+			position.x = 0;
+			position.y += child_size.h;
 
 			current_y++;
 			current_x = 0;
 		}
 	}
+}
+
+
+
+GuiVec2 GridLayout::get_minimum_size() const
+{
+	GuiVec2 minimum_size{ 0,0 };
+
+	int current_x = 0;
+	int current_y = 0;
+	int current_row_min_width = 0;
+	int current_row_min_height = 0;
+	for( const auto& child : children )
+	{
+		auto child_min_size = child->get_minimum_size();
+
+		auto col_width = col_sizes[current_x];
+		if( col_width.type == PIXELS )
+		{
+			current_row_min_width += col_width.val;
+		}
+		else
+		{
+			current_row_min_width += child_min_size.w;
+		}
+
+		current_x++;
+		if( current_x >= columns )
+		{
+			if( current_row_min_width > minimum_size.w )
+			{
+				minimum_size.w = current_row_min_width;
+			}
+
+			auto row_height = row_sizes[current_y];
+			if( row_height.type == PIXELS )
+			{
+					minimum_size.h += row_height.val;
+			}
+			else
+			{
+				minimum_size.h += current_row_min_height;
+			}
+
+			current_row_min_width = 0;
+			current_row_min_height = 0;
+
+			current_y++;
+			current_x = 0;
+		}
+	}
+	return minimum_size;
 }
 
 
