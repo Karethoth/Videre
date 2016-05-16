@@ -32,12 +32,13 @@ struct GridLayout : GuiElement
 	virtual void render() const override;
 
   protected:
-	  int auto_width;
-	  int auto_height;
-	  int used_width;
-	  int used_height;
+	int auto_width;
+	int auto_height;
+	int used_width;
+	int used_height;
 
-	  void update_dimensions();
+	void update_dimensions();
+	void fit_children();
 };
 
 

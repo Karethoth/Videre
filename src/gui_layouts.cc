@@ -13,10 +13,10 @@ using namespace std;
 
 
 GridLayout::GridLayout( int _rows, int _columns )
-: rows( _rows ), columns( _columns ), auto_height()
+: rows( _rows ), columns( _columns ), auto_height(0), auto_width(0)
 {
-	row_sizes = vector<GuiPixelsOrPercentage>( rows, {1, AUTO} );
-	col_sizes = vector<GuiPixelsOrPercentage>( columns, {1, AUTO} );
+	row_sizes = vector<GuiPixelsOrPercentage>( rows, {0, AUTO} );
+	col_sizes = vector<GuiPixelsOrPercentage>( columns, {0, AUTO} );
 }
 
 
@@ -93,8 +93,73 @@ void GridLayout::update_dimensions()
 		}
 	}
 
-	int auto_width  = auto_width_count ? (size.w - used_width)  / auto_width_count : 0;
-	int auto_height = auto_height_count ? (size.h - used_height) / auto_height_count : 0;
+	auto_width  = auto_width_count  ? (size.w - used_width)  / auto_width_count : 0;
+	auto_height = auto_height_count ? (size.h - used_height) / auto_height_count : 0;
+}
+
+
+void GridLayout::fit_children()
+{
+	int current_x = 0;
+	int current_y = 0;
+
+	GuiVec2 position{0,0};
+	GuiEvent event;
+
+	for( auto& child : children )
+	{
+		// Move the child to correct position
+		event.type = MOVE;
+		event.move.pos = position;
+		child->handle_event( event );
+
+		// Calculate size of the child
+		GuiVec2 child_size{ 0,0 };
+		auto col_width = col_sizes[current_x];
+		switch( col_width.type )
+		{
+			case PIXELS:
+				child_size.w = col_width.val;
+				break;
+
+			case AUTO:
+				child_size.w = auto_width;
+				break;
+			case PERCENTS:
+				child_size.w = (int)(col_width.val / 100.f * size.w);
+				break;
+		}
+
+		auto row_height = col_sizes[current_x];
+		switch( row_height.type )
+		{
+			case PIXELS:
+				child_size.h = row_height.val;
+				break;
+
+			case AUTO:
+				child_size.h = auto_height;
+				break;
+			case PERCENTS:
+				child_size.h = (int)(row_height.val / 100.f * size.h);
+				break;
+		}
+		
+		// Resize the child
+		event.type = RESIZE;
+		event.resize.size = child_size;
+
+		// Update position
+		current_x++;
+		if( current_x > columns )
+		{
+			pos.x = 0;
+			pos.y = 
+
+			current_y++;
+			current_x = 0;
+		}
+	}
 }
 
 
