@@ -542,7 +542,14 @@ void SplitLayout::split_layout()
 	add_child( children.first );
 	add_child( children.second );
 
-	fit_children();
+	// Trigger whole window resize event to make sure everything fits together
+	// - This is because paddings can possibly move parent elements around
+	const auto current_window_size = get_root()->size;
+
+	GuiEvent event;
+	event.type = RESIZE;
+	event.resize.size = current_window_size;
+	get_root()->handle_event( event );
 }
 
 void SplitLayout::split_at( SplitAxis axis, int offset )

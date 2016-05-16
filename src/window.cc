@@ -113,6 +113,8 @@ void Window::handle_sdl_event( const SDL_Event &e )
 				case SDL_WINDOWEVENT_RESTORED:
 				case SDL_WINDOWEVENT_FOCUS_GAINED:
 				case SDL_WINDOWEVENT_FOCUS_LOST:
+					min_size = get_minimum_size();
+					SDL_SetWindowMinimumSize( window.get(), min_size.w, min_size.h );
 					break;
 
 				case SDL_WINDOWEVENT_RESIZED:
@@ -211,7 +213,7 @@ void Window::handle_sdl_event( const SDL_Event &e )
 	}
 }
 
-const glm::mat4 identityMP = glm::mat4(1);
+
 
 void Window::render() const
 {
@@ -254,7 +256,32 @@ void Window::handle_event( const GuiEvent &e )
 	{
 		SDL_GL_MakeCurrent( window.get(), gl_context );
 		glViewport( 0, 0, e.resize.size.w, e.resize.size.h );
+
+		const auto minimum_size = get_minimum_size();
+		auto size_fix = minimum_size;
+		bool needs_size_fix = false;
+
+		if( e.resize.size.w < minimum_size.w )
+		{
+			size_fix.w = minimum_size.w;
+			needs_size_fix = true;
+		}
+		else size_fix.w = size.w;
+
+		if( e.resize.size.h < minimum_size.h )
+		{
+			size_fix.h = minimum_size.h;
+			needs_size_fix = true;
+		}
+		else size_fix.h = size.h;
+
+		if( needs_size_fix )
+		{
+			SDL_SetWindowSize( window.get(), size_fix.w, size_fix.h );
+			return;
+		}
 	}
+
 	for( auto child : children )
 	{
 		child->handle_event( e );
