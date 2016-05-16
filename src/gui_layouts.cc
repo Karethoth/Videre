@@ -201,6 +201,11 @@ GuiVec2 GridLayout::get_minimum_size() const
 			current_row_min_width += child_min_size.w;
 		}
 
+		if( child_min_size.h > current_row_min_height )
+		{
+			current_row_min_height = child_min_size.h;
+		}
+
 		current_x++;
 		if( current_x >= columns )
 		{
