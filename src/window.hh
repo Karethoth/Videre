@@ -12,6 +12,7 @@ struct Window : GuiElement
 	uint32_t          sdl_id; // SDL Window Id
 	bool              closed;
 	SDL_GLContext     gl_context;
+	GuiElementPtr     active_element; // What element is active / has focus
 
 	Window();
 	virtual ~Window();

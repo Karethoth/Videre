@@ -134,6 +134,7 @@ struct GuiElement
 
   protected:
 	virtual void init_child( GuiElement *child );
+	virtual GuiElement *get_root();
 };
 
 } // namespace gui

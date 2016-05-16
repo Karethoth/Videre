@@ -21,7 +21,7 @@ using namespace gui;
 
 
 Window::Window()
-: closed(false), sdl_id(0)
+: closed(false), sdl_id(0), active_element(nullptr)
 {
 	pos = { 0, 0 };
 	size = { 460, 320 };

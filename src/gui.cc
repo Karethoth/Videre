@@ -117,3 +117,14 @@ void GuiElement::handle_event( const GuiEvent &e )
 	}
 }
 
+
+
+GuiElement *GuiElement::get_root()
+{
+	auto current = this;
+	while( current->parent )
+	{
+		current = current->parent;
+	}
+	return current;
+}

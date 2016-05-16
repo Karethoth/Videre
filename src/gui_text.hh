@@ -11,8 +11,14 @@ namespace gui
 		string_u8 text,
 		gui::GuiVec2 position,
 		const gui::Window &window,
-		float scale=1.f,
-		std::string font = "default"
+		std::string font = "default",
+		float scale = 1.f
 	);
-};
+
+	struct TextArea : GuiElement
+	{
+		virtual void render() const override;
+		virtual void handle_event( const GuiEvent &e ) override;
+	};
+}
 

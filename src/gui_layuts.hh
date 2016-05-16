@@ -1,9 +1,22 @@
 #pragma once
 #include "gui.hh"
 #include <vector>
+#include <functional>
 
 namespace gui
 {
+struct GridLayout;
+struct SplitLayout;
+
+using GuiElementPtrPair = std::pair<GuiElementPtr, GuiElementPtr>;
+
+enum SplitAxis {
+	UNDEFINED_AXIS,
+	HORIZONTAL,
+	VERTICAL,
+	HORIZONTAL_AND_VERTICAL
+};
+
 
 struct GridLayout : GuiElement
 {
@@ -16,10 +29,18 @@ struct GridLayout : GuiElement
 	GridLayout( int _rows = 1, int _columns = 1 );
 
 	virtual void handle_event( const GuiEvent &e ) override;
+	virtual void render() const override;
+
+  protected:
+	  int auto_width;
+	  int auto_height;
+	  int used_width;
+	  int used_height;
+
+	  void update_dimensions();
 };
 
 
-enum SplitAxis { UNDEFINED_AXIS, HORIZONTAL, VERTICAL };
 
 struct SplitLayout : GuiElement
 {
@@ -27,7 +48,15 @@ struct SplitLayout : GuiElement
 	static const int border_touch_width = 10;
 	static const int border_drag_width = 5;
 
+
+	// Function that creates the children upon a split
+	std::function<GuiElementPtrPair()> create_children =
+		[] { return GuiElementPtrPair (
+				std::make_shared<SplitLayout>(),
+				std::make_shared<SplitLayout>() ); };
+
 	SplitAxis split_axis = UNDEFINED_AXIS;
+	SplitAxis allowed_axes = HORIZONTAL_AND_VERTICAL;
 	bool is_layout_splitted = false;
 	bool is_splitting_allowed = true;
 
@@ -46,7 +75,7 @@ struct SplitLayout : GuiElement
 	virtual void render() const override;
 
 	virtual GuiVec2 get_minimum_size() const override;
-
+	virtual void split_at( SplitAxis axis, int offset );
 
   protected:
 	void split_layout();

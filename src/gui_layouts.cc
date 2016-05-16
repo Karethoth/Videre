@@ -13,10 +13,10 @@ using namespace std;
 
 
 GridLayout::GridLayout( int _rows, int _columns )
-: rows( _rows ), columns( _columns )
+: rows( _rows ), columns( _columns ), auto_height()
 {
-	row_sizes = vector<GuiPixelsOrPercentage>( rows, {50, PERCENTS} );
-	col_sizes = vector<GuiPixelsOrPercentage>( columns, {50, PERCENTS} );
+	row_sizes = vector<GuiPixelsOrPercentage>( rows, {1, AUTO} );
+	col_sizes = vector<GuiPixelsOrPercentage>( columns, {1, AUTO} );
 }
 
 
@@ -28,6 +28,73 @@ void GridLayout::handle_event( const GuiEvent &e )
 		GuiElement::handle_event( e );
 		return;
 	}
+	update_dimensions();
+}
+
+
+
+void GridLayout::render() const
+{
+	const int grid_element_count = rows * columns;
+	int children_rendered = 0;
+
+	for( auto& child : children )
+	{
+		if( children_rendered++ > grid_element_count )
+		{
+			break;
+		}
+
+		child->render();
+	}
+}
+
+void GridLayout::update_dimensions()
+{
+	used_width = 0;
+	used_height = 0;
+
+	int auto_width_count = 0;
+	int auto_height_count = 0;
+
+	for( auto row_size : row_sizes )
+	{
+		switch( row_size.type )
+		{
+			case PIXELS:
+				used_width += row_size.val;
+				break;
+
+			case PERCENTS:
+				used_width += (int)(row_size.val / 100.f * size.w);
+				break;
+
+			case AUTO:
+				auto_width_count++;
+				break;
+		}
+	}
+
+	for( auto col_size : col_sizes )
+	{
+		switch( col_size.type )
+		{
+			case PIXELS:
+				used_height += col_size.val;
+				break;
+
+			case PERCENTS:
+				used_height += (int)(col_size.val / 100.f * size.h);
+				break;
+
+			case AUTO:
+				auto_height_count++;
+				break;
+		}
+	}
+
+	int auto_width  = auto_width_count ? (size.w - used_width)  / auto_width_count : 0;
+	int auto_height = auto_height_count ? (size.h - used_height) / auto_height_count : 0;
 }
 
 
@@ -111,14 +178,17 @@ void SplitLayout::handle_event( const GuiEvent &e )
 		    !is_layout_splitted &&
 		    is_splitting_allowed )
 		{
-			split_bar.is_visible = true;
-			if( border_touched == NORTH || border_touched == SOUTH )
+			if( (border_touched == NORTH || border_touched == SOUTH) &&
+			    (allowed_axes == VERTICAL || allowed_axes == HORIZONTAL_AND_VERTICAL) )
 			{
+				split_bar.is_visible = true;
 				split_bar.axis = VERTICAL;
 				split_bar.offset = mouse_pos.x - pos.x;
 			}
-			else
+			else if( (border_touched == WEST || border_touched == EAST) &&
+			         (allowed_axes == HORIZONTAL || allowed_axes == HORIZONTAL_AND_VERTICAL) )
 			{
+				split_bar.is_visible = true;
 				split_bar.axis = HORIZONTAL;
 				split_bar.offset = mouse_pos.y - pos.y;
 			}
@@ -330,12 +400,27 @@ void SplitLayout::split_layout()
 		(float)split_bar.offset / size.w :
 		(float)split_bar.offset / size.h;
 
-	auto a = make_shared<gui::SplitLayout>();
-	auto b = make_shared<gui::SplitLayout>();
+	auto children = create_children();
 
-	add_child( a );
-	add_child( b );
+	add_child( children.first );
+	add_child( children.second );
 
+	fit_children();
+}
+
+void SplitLayout::split_at( SplitAxis axis, int offset )
+{
+	split_axis = axis;
+	split_bar.offset = offset;
+	split_bar.ratio = (split_axis == VERTICAL) ?
+		(float)split_bar.offset / size.w :
+		(float)split_bar.offset / size.h;
+	is_layout_splitted = true;
+	split_bar.is_locked = true;
+
+	auto children = create_children();
+	add_child( children.first );
+	add_child( children.second );
 	fit_children();
 }
 
@@ -380,7 +465,6 @@ void SplitLayout::fit_children()
 	}
 
 	GuiEvent event;
-
 
 	// Move children to correct positions
 	event.type = MOVE;
