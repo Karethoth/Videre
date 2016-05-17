@@ -1,4 +1,4 @@
-#include "gui_layuts.hh"
+#include "gui_layouts.hh"
 #include "gui_gl.hh"
 #include "globals.hh"
 #include "gl_helpers.hh"

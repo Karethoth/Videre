@@ -3,7 +3,7 @@
 #include "window.hh"
 #include "globals.hh"
 #include "settings.hh"
-#include "gui_layuts.hh"
+#include "gui_layouts.hh"
 #include "gui_gl.hh"
 #include "gl_helpers.hh"
 #include "shaderProgram.hh"
@@ -19,6 +19,7 @@
 #include <exception>
 
 #include <json.hpp>
+#include <ftlcdfil.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -182,6 +183,8 @@ void init_freetype()
 
 	vector<std::pair<string,string>> font_list;
 	font_list.push_back( { "default", "data/fonts/default.ttf" } );
+
+	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
 
 	FT_Face tmp_face;
 	for( const auto &font : font_list )

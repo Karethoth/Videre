@@ -119,6 +119,7 @@ struct GlCharacter
 	glm::ivec2 size;
 	glm::ivec2 bearing;
 	GLuint advance;
+	FT_UInt glyph;
 };
 
 struct FontFaceIdentity
@@ -270,7 +271,8 @@ GlCharacter add_character( FT_Face face, unsigned long c )
 		texture,
 		glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
 		glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
-		(GLuint)face->glyph->advance.x
+		(GLuint)face->glyph->advance.x,
+		glyph_index
 	};
 
 	font_face_library[FontFaceIdentity( face )].insert( { c, character } );
@@ -337,6 +339,8 @@ size_t gl::render_text_2d(
 	gui::any_gl_errors();
 
 	const auto& font_face_contents = font_face_library[{ face }];
+
+	GlCharacter previous_character{};
 	
 	while( (current_character = read_next_character(str_ptr, str_end, bytes_read)) )
 	{
@@ -356,9 +360,23 @@ size_t gl::render_text_2d(
 		}
 		gui::any_gl_errors();
 
+		// Get kerning
+		FT_Vector kerning{0,0};
+		auto has_kerning = FT_HAS_KERNING( face );
+		if( has_kerning && previous_character.glyph )
+		{
+			auto err = FT_Get_Kerning(
+				face,
+				previous_character.glyph,
+				c.glyph,
+				FT_KERNING_DEFAULT,
+				&kerning
+			);
+		}
+
 		// Render
-		const GLfloat pos_x = caret_pos_x * scale.x;
-		const GLfloat pos_y = pos.y - (c.size.y - c.bearing.y);
+		const GLfloat pos_x = caret_pos_x * scale.x + kerning.x;
+		const GLfloat pos_y = pos.y - (c.size.y - c.bearing.y) + kerning.y;
 		const GLfloat w = c.size.x * scale.x;
 		const GLfloat h = c.size.y * scale.y;
 
@@ -383,8 +401,10 @@ size_t gl::render_text_2d(
 		glDrawArrays( GL_TRIANGLES, 0, 6 );
 		
 		// Bitshift by 6 to get pixels
-		offset += static_cast<int>((c.advance >> 6) * scale.x);
+		offset += static_cast<int>((c.advance >> 6) * scale.x) + kerning.x;
+		previous_character = c;
 	}
+
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	glBindVertexArray( 0 );

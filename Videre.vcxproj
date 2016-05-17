@@ -146,7 +146,7 @@
     <ClInclude Include="src\globals.hh" />
     <ClInclude Include="src\gl_helpers.hh" />
     <ClInclude Include="src\gui.hh" />
-    <ClInclude Include="src\gui_layuts.hh" />
+    <ClInclude Include="src\gui_layouts.hh" />
     <ClInclude Include="src\gui_gl.hh" />
     <ClInclude Include="src\gui_text.hh" />
     <ClInclude Include="src\mesh.hh" />

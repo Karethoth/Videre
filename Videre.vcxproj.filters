@@ -65,9 +65,6 @@
     <ClInclude Include="src\gui.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\gui_layuts.hh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\settings.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\typedefs.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gui_layouts.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
