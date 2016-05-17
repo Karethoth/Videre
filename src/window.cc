@@ -111,14 +111,12 @@ void Window::handle_sdl_event( const SDL_Event &e )
 				case SDL_WINDOWEVENT_MINIMIZED:
 				case SDL_WINDOWEVENT_MAXIMIZED:
 				case SDL_WINDOWEVENT_RESTORED:
-				case SDL_WINDOWEVENT_FOCUS_GAINED:
 				case SDL_WINDOWEVENT_FOCUS_LOST:
-					min_size = get_minimum_size();
-					SDL_SetWindowMinimumSize( window.get(), min_size.w, min_size.h );
+				case SDL_WINDOWEVENT_FOCUS_GAINED:
 					break;
 
 				case SDL_WINDOWEVENT_RESIZED:
-				case SDL_WINDOWEVENT_SIZE_CHANGED:
+				//case SDL_WINDOWEVENT_SIZE_CHANGED:
 					min_size = get_minimum_size();
 					size = { e.window.data1, e.window.data2 };
 					if( size.w < min_size.w )
@@ -209,7 +207,6 @@ void Window::handle_sdl_event( const SDL_Event &e )
 			SDL_SetTextInputRect( &rect );
 			wcout << "EDITING: " << e.edit.text << endl;
 			break;
-
 	}
 }
 
