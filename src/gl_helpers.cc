@@ -365,13 +365,15 @@ size_t gl::render_text_2d(
 		auto has_kerning = FT_HAS_KERNING( face );
 		if( has_kerning && previous_character.glyph )
 		{
-			auto err = FT_Get_Kerning(
+			FT_Get_Kerning(
 				face,
 				previous_character.glyph,
 				c.glyph,
 				FT_KERNING_DEFAULT,
 				&kerning
 			);
+			kerning.x >>= 6;
+			kerning.y >>= 6;
 		}
 
 		// Render
