@@ -23,8 +23,8 @@ struct GridLayout : GuiElement
 	const int rows;
 	const int columns;
 
-	std::vector<GuiPixelsOrPercentage> row_sizes;
-	std::vector<GuiPixelsOrPercentage> col_sizes;
+	std::vector<GuiPixelsOrPercentage> col_widths;
+	std::vector<GuiPixelsOrPercentage> row_heights;
 
 	GridLayout( int _rows = 1, int _columns = 1 );
 

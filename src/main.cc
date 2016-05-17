@@ -317,8 +317,8 @@ int main( int argc, char **argv )
 	#endif
 
 	auto grid = make_shared<gui::GridLayout>(2, 2);
-	grid->col_sizes = { {0, gui::AUTO}, {100, gui::PIXELS} };
-	grid->row_sizes = { {0, gui::AUTO}, {100, gui::PIXELS} };
+	grid->col_widths  = { {0, gui::AUTO}, {33, gui::PERCENTS} };
+	grid->row_heights = { {0, gui::AUTO}, {100, gui::PIXELS} };
 
 
 	auto colored_split1 = make_shared<gui::SplitLayout>();

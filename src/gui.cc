@@ -133,7 +133,7 @@ void GuiElement::handle_event( const GuiEvent &e )
 
 GuiElement *GuiElement::get_root() const
 {
-	auto current = this->parent;
+	auto current = const_cast<GuiElement*>( this );
 	while( current->parent )
 	{
 		current = current->parent;

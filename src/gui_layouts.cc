@@ -15,8 +15,8 @@ using namespace std;
 GridLayout::GridLayout( int _rows, int _columns )
 : rows( _rows ), columns( _columns ), auto_height(0), auto_width(0)
 {
-	row_sizes = vector<GuiPixelsOrPercentage>( rows, {0, AUTO} );
-	col_sizes = vector<GuiPixelsOrPercentage>( columns, {0, AUTO} );
+	col_widths = vector<GuiPixelsOrPercentage>( columns, {0, AUTO} );
+	row_heights = vector<GuiPixelsOrPercentage>( rows, {0, AUTO} );
 }
 
 
@@ -69,16 +69,16 @@ void GridLayout::update_dimensions()
 	int auto_width_count = 0;
 	int auto_height_count = 0;
 
-	for( auto row_size : row_sizes )
+	for( auto col_width : col_widths )
 	{
-		switch( row_size.type )
+		switch( col_width.type )
 		{
 			case PIXELS:
-				used_width += row_size.val;
+				used_width += col_width.val;
 				break;
 
 			case PERCENTS:
-				used_width += (int)(row_size.val / 100.f * size.w);
+				used_width += (int)(col_width.val / 100.f * size.w);
 				break;
 
 			case AUTO:
@@ -87,16 +87,16 @@ void GridLayout::update_dimensions()
 		}
 	}
 
-	for( auto col_size : col_sizes )
+	for( auto row_height : row_heights )
 	{
-		switch( col_size.type )
+		switch( row_height.type )
 		{
 			case PIXELS:
-				used_height += col_size.val;
+				used_height += row_height.val;
 				break;
 
 			case PERCENTS:
-				used_height += (int)(col_size.val / 100.f * size.h);
+				used_height += (int)(row_height.val / 100.f * size.h);
 				break;
 
 			case AUTO:
@@ -127,7 +127,7 @@ void GridLayout::fit_children()
 
 		// Calculate size of the child
 		GuiVec2 child_size{ 0,0 };
-		auto col_width = col_sizes[current_x];
+		auto col_width = col_widths[current_x];
 		switch( col_width.type )
 		{
 			case PIXELS:
@@ -142,7 +142,7 @@ void GridLayout::fit_children()
 				break;
 		}
 
-		auto row_height = row_sizes[current_y];
+		auto row_height = row_heights[current_y];
 		switch( row_height.type )
 		{
 			case PIXELS:
@@ -191,7 +191,7 @@ GuiVec2 GridLayout::get_minimum_size() const
 	{
 		auto child_min_size = child->get_minimum_size();
 
-		auto col_width = col_sizes[current_x];
+		auto col_width = col_widths[current_x];
 		if( col_width.type == PIXELS )
 		{
 			current_row_min_width += col_width.val;
@@ -214,7 +214,7 @@ GuiVec2 GridLayout::get_minimum_size() const
 				minimum_size.w = current_row_min_width;
 			}
 
-			auto row_height = row_sizes[current_y];
+			auto row_height = row_heights[current_y];
 			if( row_height.type == PIXELS )
 			{
 					minimum_size.h += row_height.val;
