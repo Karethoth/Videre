@@ -2,6 +2,7 @@
 #include "sdl2.hh"
 #include <glm/glm.hpp>
 #include <vector>
+#include <functional>
 
 namespace gui
 {
@@ -13,7 +14,7 @@ enum GuiEventType
 {
 	MOVE, RESIZE,
 	MOUSE_BUTTON, MOUSE_SCROLL, MOUSE_MOVE, MOUSE_DRAG, MOUSE_DOUBLE_CLICK,
-	WINDOW_BLUR, WINDOW_FOCUS
+	WINDOW_BLUR, WINDOW_FOCUS, ELEMENT_BLUR, ELEMENT_FOCUS
 };
 
 
@@ -83,6 +84,7 @@ struct GuiEvent
 
 		struct
 		{
+			GuiVec2 pos;
 			GuiDirection direction;
 			int value;
 		} mouse_scroll;
@@ -100,8 +102,8 @@ struct GuiEvent
 
 		struct
 		{
-			int button;
 			GuiVec2 pos;
+			int button;
 		} mouse_double_click;
 	};
 
@@ -109,7 +111,10 @@ struct GuiEvent
 };
 
 struct GuiElement;
-typedef std::shared_ptr<GuiElement> GuiElementPtr;
+using GuiElementPtr = std::shared_ptr<GuiElement>;
+using GuiEventListener = std::pair<
+		decltype(GuiEvent::type),
+		std::function<void(GuiElement*, const GuiEvent&)>>;
 
 struct GuiElement
 {
@@ -120,6 +125,8 @@ struct GuiElement
 	std::vector<GuiElementPtr> children;
 
 	glm::vec4 color_bg = { 0, 0, 0, 0 };
+
+	std::vector<GuiEventListener> event_listeners;
 
 	GuiElement() {};
 	virtual ~GuiElement() {};

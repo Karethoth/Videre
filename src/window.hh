@@ -2,6 +2,7 @@
 
 #include "sdl2.hh"
 #include "gui.hh"
+#include "gui_popup_element.hh"
 
 namespace gui
 {
@@ -13,6 +14,8 @@ struct Window : GuiElement
 	bool              closed;
 	SDL_GLContext     gl_context;
 	GuiElementPtr     active_element; // What element is active / has focus
+
+	std::vector<PopupElement> popup_elements;
 
 	Window();
 	virtual ~Window();

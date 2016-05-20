@@ -95,10 +95,13 @@ void Window::handle_sdl_event( const SDL_Event &e )
 {
 	GuiEvent gui_event;
 	GuiVec2  min_size;
+
+	static const auto mouse_double_click_threshold = chrono::milliseconds( 500 );
+
+	// TODO: Make these non-static
 	static GuiVec2 mouse_down_pos;
 	static bool  mouse_down = false;
 	static auto last_mouse_down = chrono::steady_clock::now();
-	static const auto mouse_double_click_threshold = chrono::milliseconds( 500 );
 
 	switch( e.type )
 	{
@@ -116,7 +119,7 @@ void Window::handle_sdl_event( const SDL_Event &e )
 					break;
 
 				case SDL_WINDOWEVENT_RESIZED:
-				//case SDL_WINDOWEVENT_SIZE_CHANGED:
+				case SDL_WINDOWEVENT_SIZE_CHANGED:
 					min_size = get_minimum_size();
 					size = { e.window.data1, e.window.data2 };
 					if( size.w < min_size.w )
@@ -193,8 +196,20 @@ void Window::handle_sdl_event( const SDL_Event &e )
 			{
 				last_mouse_down = chrono::steady_clock::now();
 				gui_event.type = MOUSE_BUTTON;
+				gui_event.mouse_button.button = e.button.button;
+				gui_event.mouse_button.state = PRESSED;
 				gui_event.mouse_button.pos = { e.button.x, e.button.y };
 			}
+			handle_event( gui_event );
+			break;
+
+		case SDL_MOUSEWHEEL:
+			gui_event.type = MOUSE_SCROLL;
+			SDL_GetMouseState( &gui_event.mouse_scroll.pos.x, &gui_event.mouse_scroll.pos.y );
+			gui_event.mouse_scroll.direction = (e.wheel.y > 0) ?
+				gui::GuiDirection::NORTH :
+				gui::GuiDirection::SOUTH;
+			gui_event.mouse_scroll.value = abs( e.wheel.y );
 			handle_event( gui_event );
 			break;
 
@@ -226,6 +241,11 @@ void Window::render() const
 	glClear( GL_COLOR_BUFFER_BIT );
 
 	GuiElement::render();
+
+	for( const auto &popup : popup_elements )
+	{
+		popup.render();
+	}
 
 	gui::any_gl_errors();
 	glUseProgram( shader->second.program );

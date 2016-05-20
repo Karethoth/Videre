@@ -153,6 +153,7 @@
     <ClInclude Include="src\gui.hh" />
     <ClInclude Include="src\gui_layouts.hh" />
     <ClInclude Include="src\gui_gl.hh" />
+    <ClInclude Include="src\gui_popup_element.hh" />
     <ClInclude Include="src\gui_text.hh" />
     <ClInclude Include="src\mesh.hh" />
     <ClInclude Include="src\sdl2.hh" />

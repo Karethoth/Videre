@@ -92,5 +92,8 @@
     <ClInclude Include="src\gui_layouts.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\gui_popup_element.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

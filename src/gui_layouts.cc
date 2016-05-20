@@ -12,8 +12,9 @@ using namespace gui;
 using namespace std;
 
 
-GridLayout::GridLayout( int _rows, int _columns )
-: rows( _rows ), columns( _columns ), auto_height(0), auto_width(0)
+GridLayout::GridLayout( int _columns, int _rows )
+: columns( _columns ), rows( _rows ),
+  auto_width(0), auto_height(0)
 {
 	col_widths = vector<GuiPixelsOrPercentage>( columns, {0, AUTO} );
 	row_heights = vector<GuiPixelsOrPercentage>( rows, {0, AUTO} );
@@ -117,6 +118,11 @@ void GridLayout::fit_children()
 
 	GuiVec2 position{0,0};
 	GuiEvent event;
+
+	if( children.size() > (rows * columns) )
+	{
+		throw runtime_error( "Too many children in GridLayout to fit in to the grid" );
+	}
 
 	for( auto& child : children )
 	{

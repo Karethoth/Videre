@@ -320,9 +320,8 @@ int main( int argc, char **argv )
 	#endif
 
 	auto grid = make_shared<gui::GridLayout>(2, 2);
-	grid->col_widths  = { {0, gui::AUTO}, {33, gui::PERCENTS} };
+	grid->col_widths = { {0, gui::AUTO}, {33, gui::PERCENTS} };
 	grid->row_heights = { {0, gui::AUTO}, {100, gui::PIXELS} };
-
 
 	auto colored_split1 = make_shared<gui::SplitLayout>();
 	colored_split1->color_bg = { 0.8, 0.5, 0.5, 0.5 };
@@ -335,6 +334,31 @@ int main( int argc, char **argv )
 	colored_split2->color_bg = { 0.8, 0.5, 0.5, 1.0 };
 	grid->add_child( colored_split2 );
 
+	auto mouse_button_handler = []( gui::GuiElement *element, const gui::GuiEvent &event )
+	{
+		static const auto original_color = element->color_bg;
+		const auto state = event.type == gui::GuiEventType::MOUSE_BUTTON ?
+			event.mouse_button.state :
+			gui::GuiButtonState::PRESSED;
+
+		if( state == gui::GuiButtonState::PRESSED )
+		{
+			element->color_bg = { 1.0, 0.0, 0.0, 1.0 };
+		}
+		else
+		{
+			element->color_bg = original_color;
+		}
+	};
+
+	colored_split2->event_listeners.push_back( {
+		gui::GuiEventType::MOUSE_BUTTON, mouse_button_handler
+	});
+
+	colored_split2->event_listeners.push_back( {
+		gui::GuiEventType::MOUSE_DOUBLE_CLICK, mouse_button_handler
+	});
+
 	Globals::windows[0].add_child( grid );
 
 	auto glElement = make_shared<gui::GlElement>( Globals::windows[0].window.get() );
@@ -346,8 +370,8 @@ int main( int argc, char **argv )
 
 	auto next_frame = chrono::system_clock::now();
 
-	// FPS - over 10 frames
-	const auto fps_step_count = 1;
+	// FPS - average over 10 frames
+	const auto fps_step_count = 10;
 	const auto fps_cap = 60;
 	auto fps_start_time = chrono::system_clock::now();
 	auto fps_frames_left = fps_step_count;

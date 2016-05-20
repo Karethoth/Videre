@@ -123,6 +123,45 @@ void GuiElement::handle_event( const GuiEvent &e )
 			break;
 	}
 
+	// Cut off mouse events that are not in the area of the element
+	bool not_in_area = false;
+	switch( e.type )
+	{
+		case MOUSE_BUTTON:
+			// Allow mouse button released events
+			not_in_area = e.mouse_button.state != RELEASED && !in_area( e.mouse_button.pos );
+			break;
+
+		case MOUSE_DOUBLE_CLICK:
+			not_in_area = !in_area( e.mouse_double_click.pos );
+			break;
+
+		case MOUSE_DRAG:
+			not_in_area = !in_area( e.mouse_drag.pos_start );
+			break;
+
+		case MOUSE_MOVE:
+			not_in_area = !in_area( e.mouse_move.pos );
+			break;
+
+		default:
+			break;
+	}
+
+	// TODO: Logic for losing and gaining focus
+	if( not_in_area )
+	{
+		return;
+	}
+
+	for( auto& event_listener : event_listeners )
+	{
+		if( event_listener.first == e.type )
+		{
+			event_listener.second( this, e );
+		}
+	}
+
 	for( auto child : children )
 	{
 		child->handle_event( e );
