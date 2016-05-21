@@ -139,6 +139,7 @@
     <ClCompile Include="src\gui.cc" />
     <ClCompile Include="src\gui_gl.cc" />
     <ClCompile Include="src\gui_layouts.cc" />
+    <ClCompile Include="src\gui_menu.cc" />
     <ClCompile Include="src\gui_popup_element.cc" />
     <ClCompile Include="src\main.cc" />
     <ClCompile Include="src\sdl2.cc" />
@@ -155,6 +156,7 @@
     <ClInclude Include="src\gui.hh" />
     <ClInclude Include="src\gui_layouts.hh" />
     <ClInclude Include="src\gui_gl.hh" />
+    <ClInclude Include="src\gui_menu.hh" />
     <ClInclude Include="src\gui_popup_element.hh" />
     <ClInclude Include="src\gui_text.hh" />
     <ClInclude Include="src\vector_graphics_editor.hh" />

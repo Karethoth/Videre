@@ -54,6 +54,9 @@
     <ClCompile Include="src\gui_popup_element.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\gui_menu.cc">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh">
@@ -102,6 +105,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\vector_graphics_editor.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gui_menu.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -33,7 +33,7 @@ bool GuiElement::in_area( const GuiVec2 &_pos ) const
 }
 
 
-void GuiElement::add_child( GuiElementPtr child)
+void GuiElement::add_child( GuiElementPtr child )
 {
 	if( !child )
 	{

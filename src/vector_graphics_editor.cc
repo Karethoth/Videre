@@ -1,5 +1,6 @@
 #include "vector_graphics_editor.hh"
 #include "gui_layouts.hh"
+#include "gui_menu.hh"
 #include <memory>
 #include <iostream>
 
@@ -71,10 +72,35 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 			}
 
 			auto popupMenu = make_shared<PopupElement>();
-			popupMenu->color_bg = { 1.0, 0.0, 0.0, 1.0 };
-			popupMenu->size = { 100, 100 };
-			popupMenu->pos = e.mouse_button.pos;
+			popupMenu->color_bg = { 0.8, 0.8, 0.8, 0.6 };
+
+			auto menu = make_shared<Menu>();
+
+			// Add some test elements
+			auto testMenuItem = make_shared<GuiElement>();
+			testMenuItem->size = { 0, 25 };
+			testMenuItem->color_bg = { 0.0, 0.0, 0.0, 0.8 };
+			menu->add_child( testMenuItem );
+
+			auto testMenuItem2 = make_shared<GuiElement>();
+			testMenuItem2->size = { 0, 25 };
+			testMenuItem2->color_bg = { 0.0, 0.0, 0.0, 0.2 };
+			menu->add_child( testMenuItem2 );
+
+			popupMenu->add_child( menu );
+
+			// Resize the context menu
+			GuiEvent event;
+			event.type = MOVE;
+			event.move.pos = e.mouse_button.pos;
+			popupMenu->handle_event( event );
+
+			event.type = RESIZE;
+			event.resize.size = { 100, 100 };
+			popupMenu->handle_event( event );
+
 			popupMenu->parent = window;
+
 			// TODO: check if the element would fit better above the pointer,
 			//       or on the left side
 
