@@ -7,6 +7,7 @@
 #include "gui_gl.hh"
 #include "gl_helpers.hh"
 #include "shaderProgram.hh"
+#include "vector_graphics_editor.hh"
 
 #include <mutex>
 #include <memory>
@@ -319,47 +320,8 @@ int main( int argc, char **argv )
 	#endif
 	#endif
 
-	auto grid = make_shared<gui::GridLayout>(2, 2);
-	grid->col_widths = { {0, gui::AUTO}, {33, gui::PERCENTS} };
-	grid->row_heights = { {0, gui::AUTO}, {100, gui::PIXELS} };
-
-	auto colored_split1 = make_shared<gui::SplitLayout>();
-	colored_split1->color_bg = { 0.8, 0.5, 0.5, 0.5 };
-	grid->add_child( colored_split1 );
-
-	grid->add_child( make_shared<gui::SplitLayout>() );
-	grid->add_child( make_shared<gui::SplitLayout>() );
-
-	auto colored_split2 = make_shared<gui::SplitLayout>();
-	colored_split2->color_bg = { 0.8, 0.5, 0.5, 1.0 };
-	grid->add_child( colored_split2 );
-
-	auto mouse_button_handler = []( gui::GuiElement *element, const gui::GuiEvent &event )
-	{
-		static const auto original_color = element->color_bg;
-		const auto state = event.type == gui::GuiEventType::MOUSE_BUTTON ?
-			event.mouse_button.state :
-			gui::GuiButtonState::PRESSED;
-
-		if( state == gui::GuiButtonState::PRESSED )
-		{
-			element->color_bg = { 1.0, 0.0, 0.0, 1.0 };
-		}
-		else
-		{
-			element->color_bg = original_color;
-		}
-	};
-
-	colored_split2->event_listeners.push_back( {
-		gui::GuiEventType::MOUSE_BUTTON, mouse_button_handler
-	});
-
-	colored_split2->event_listeners.push_back( {
-		gui::GuiEventType::MOUSE_DOUBLE_CLICK, mouse_button_handler
-	});
-
-	Globals::windows[0].add_child( grid );
+	auto vector_graphics_editor = make_shared<VectorGraphicsEditor>();
+	Globals::windows[0].add_child( vector_graphics_editor );
 
 	auto glElement = make_shared<gui::GlElement>( Globals::windows[0].window.get() );
 

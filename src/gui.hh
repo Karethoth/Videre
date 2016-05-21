@@ -139,10 +139,10 @@ struct GuiElement
 
 	virtual void render() const;
 	virtual void handle_event( const GuiEvent &e );
+	virtual GuiElement *get_root() const;
 
   protected:
 	virtual void init_child( GuiElement *child );
-	virtual GuiElement *get_root() const;
 };
 
 } // namespace gui

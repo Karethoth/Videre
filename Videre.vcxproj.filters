@@ -48,6 +48,12 @@
     <ClCompile Include="src\gl_helpers.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\vector_graphics_editor.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gui_popup_element.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh">
@@ -93,6 +99,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui_popup_element.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vector_graphics_editor.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

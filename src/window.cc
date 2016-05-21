@@ -244,21 +244,7 @@ void Window::render() const
 
 	for( const auto &popup : popup_elements )
 	{
-		popup.render();
-	}
-
-	gui::any_gl_errors();
-	glUseProgram( shader->second.program );
-	gui::any_gl_errors();
-
-	auto font = Globals::freetype_faces.find( "default" );
-	if( font != Globals::freetype_faces.end() )
-	{
-		FT_Set_Pixel_Sizes( font->second, 0, 50 );
-		auto text = "Testing: \xE2\x88\x83y \xE2\x88\x80x \xC2\xAC(x \xE2\x89\xBA y)";
-		auto text2 = "\xEC\xA1\xB0\xEC\x84\xA0\xEA\xB8\x80\xE3\x82\x8F\xE3\x81\x9F\xE3\x81\x97\xE7\xA7\x81";
-		gl::render_text_2d( shader->second, { size.w, size.h }, text, { 00, 50 }, { 1,1 }, font->second );
-		gl::render_text_2d( shader->second, { size.w, size.h }, text2, { 00, 150 }, { 1,1 }, font->second );
+		popup->render();
 	}
 
 	glFlush();
@@ -299,7 +285,52 @@ void Window::handle_event( const GuiEvent &e )
 		}
 	}
 
-	for( auto child : children )
+	// For certain mouse events, check if one of the popup elements captures it
+	// and if it does, let it handle the event
+	auto captured_by_popup = false;
+	if( e.type == MOUSE_BUTTON ||
+	    e.type == MOUSE_MOVE ||
+	    e.type == MOUSE_SCROLL ||
+	    e.type == MOUSE_DRAG )
+	{
+		// We want to go over the elements starting from newest one (the last one pushed in)
+		for( auto it = popup_elements.rbegin(); it != popup_elements.rend(); it++ )
+		{
+			GuiVec2 pos;
+			switch( e.type )
+			{
+				case MOUSE_BUTTON:
+					pos = e.mouse_button.pos;
+					break;
+
+				case MOUSE_MOVE:
+					pos = e.mouse_move.pos;
+					break;
+
+				case MOUSE_SCROLL:
+					pos = e.mouse_scroll.pos;
+					break;
+
+				case MOUSE_DRAG:
+					pos = e.mouse_drag.pos_start;
+					break;
+			}
+
+			if( (*it)->in_area( pos ) )
+			{
+				captured_by_popup = true;
+				(*it)->handle_event( e );
+				break;
+			}
+		}
+	}
+
+	if( captured_by_popup )
+	{
+		return;
+	}
+
+	for( auto &child : children )
 	{
 		child->handle_event( e );
 	}

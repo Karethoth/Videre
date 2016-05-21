@@ -15,7 +15,7 @@ struct Window : GuiElement
 	SDL_GLContext     gl_context;
 	GuiElementPtr     active_element; // What element is active / has focus
 
-	std::vector<PopupElement> popup_elements;
+	std::vector<std::shared_ptr<PopupElement>> popup_elements;
 
 	Window();
 	virtual ~Window();

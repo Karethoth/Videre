@@ -113,10 +113,10 @@ void GridLayout::update_dimensions()
 
 void GridLayout::fit_children()
 {
-	int current_x = pos.x;
-	int current_y = pos.y;
+	int element_index_x = 0;
+	int element_index_y = 0;
 
-	GuiVec2 position{0,0};
+	GuiVec2 child_position = pos;
 	GuiEvent event;
 
 	if( children.size() > (rows * columns) )
@@ -128,12 +128,12 @@ void GridLayout::fit_children()
 	{
 		// Move the child to correct position
 		event.type = MOVE;
-		event.move.pos = position;
+		event.move.pos = child_position;
 		child->handle_event( event );
 
 		// Calculate size of the child
 		GuiVec2 child_size{ 0,0 };
-		auto col_width = col_widths[current_x];
+		auto col_width = col_widths[element_index_x];
 		switch( col_width.type )
 		{
 			case PIXELS:
@@ -148,7 +148,7 @@ void GridLayout::fit_children()
 				break;
 		}
 
-		auto row_height = row_heights[current_y];
+		auto row_height = row_heights[element_index_y];
 		switch( row_height.type )
 		{
 			case PIXELS:
@@ -163,22 +163,23 @@ void GridLayout::fit_children()
 				break;
 		}
 		
-		// Resize the child
+		// Resize the child to fit
 		event.type = RESIZE;
 		event.resize.size = child_size;
 		child->handle_event( event );
 
-		// Update position
-		position.x += child_size.w;
+		// Move element position to right
+		child_position.x += child_size.w;
+		element_index_x++;
 
-		current_x++;
-		if( current_x >= columns )
+		// If that was the last element of the row, move to the next row
+		if( element_index_x >= columns )
 		{
-			position.x = 0;
-			position.y += child_size.h;
+			child_position.x = pos.x;
+			child_position.y += child_size.h;
 
-			current_y++;
-			current_x = 0;
+			element_index_y++;
+			element_index_x = 0;
 		}
 	}
 }
