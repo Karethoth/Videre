@@ -21,6 +21,52 @@ GuiVec2 gui::operator-( const GuiVec2 &a, const GuiVec2 &b )
 }
 
 
+GuiMouseHoverHelper::GuiMouseHoverHelper( const GuiElement &target )
+: target_element( target ), is_over( false )
+{
+}
+
+GuiEvent GuiMouseHoverHelper::generate_event( const GuiEvent &e )
+{
+	GuiEvent event;
+	event.type = NO_EVENT;
+
+	const bool was_over = is_over;
+	bool is_in_area;
+
+	switch( e.type )
+	{
+		case MOUSE_MOVE:
+			is_in_area = target_element.in_area( e.mouse_move.pos );
+			break;
+
+		default:
+			return event;
+	}
+
+	if( !was_over && is_in_area )
+	{
+		event.type = MOUSE_ENTER;
+		is_over = true;
+	}
+	else if( was_over && !is_in_area )
+	{
+		event.type = MOUSE_LEAVE;
+		is_over = false;
+	}
+
+	return event;
+}
+
+
+GuiElement::GuiElement()
+: parent( nullptr ),
+  color_bg{ 0.0 },
+  hover_helper( *this )
+{
+}
+
+
 bool GuiElement::in_area( const GuiVec2 &_pos ) const
 {
 	if( _pos.x >= pos.x && _pos.x <= pos.x + size.w &&
@@ -123,35 +169,10 @@ void GuiElement::handle_event( const GuiEvent &e )
 			break;
 	}
 
-	// Cut off mouse events that are not in the area of the element
-	bool not_in_area = false;
-	switch( e.type )
+	auto hover_event = hover_helper.generate_event( e );
+	if( hover_event.type != NO_EVENT )
 	{
-		case MOUSE_BUTTON:
-			// Allow mouse button released events
-			not_in_area = e.mouse_button.state != RELEASED && !in_area( e.mouse_button.pos );
-			break;
-
-		case MOUSE_DOUBLE_CLICK:
-			not_in_area = !in_area( e.mouse_double_click.pos );
-			break;
-
-		case MOUSE_DRAG:
-			not_in_area = !in_area( e.mouse_drag.pos_start );
-			break;
-
-		case MOUSE_MOVE:
-			not_in_area = !in_area( e.mouse_move.pos );
-			break;
-
-		default:
-			break;
-	}
-
-	// TODO: Logic for losing and gaining focus
-	if( not_in_area )
-	{
-		return;
+		handle_event( hover_event );
 	}
 
 	for( auto& event_listener : event_listeners )
@@ -160,6 +181,13 @@ void GuiElement::handle_event( const GuiEvent &e )
 		{
 			event_listener.second( this, e );
 		}
+	}
+
+	// Cut off events that shouldn't be passed to children
+	switch( e.type )
+	{
+		case MOUSE_ENTER:
+			return;
 	}
 
 	for( auto child : children )

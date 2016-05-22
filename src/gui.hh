@@ -7,14 +7,20 @@
 namespace gui
 {
 
+struct GuiVec2;
+struct GuiEvent;
+struct GuiElement;
+struct GuiMouseOverTracker;
+struct GuiPixelOrPercentage;
+
 enum GuiDirection    { UNDEFINED_DIRECTION, NORTH, SOUTH, EAST, WEST };
 enum GuiDistanceType { PIXELS, PERCENTS, AUTO };
 enum GuiButtonState  { RELEASED, PRESSED };
 enum GuiEventType
 {
-	MOVE, RESIZE,
+	NO_EVENT, MOVE, RESIZE,
 	MOUSE_BUTTON, MOUSE_SCROLL, MOUSE_MOVE, MOUSE_DRAG, MOUSE_DOUBLE_CLICK,
-	WINDOW_BLUR, WINDOW_FOCUS, ELEMENT_BLUR, ELEMENT_FOCUS
+	WINDOW_BLUR, WINDOW_FOCUS, MOUSE_ENTER, MOUSE_LEAVE
 };
 
 
@@ -110,7 +116,18 @@ struct GuiEvent
 	GuiEvent() {};
 };
 
-struct GuiElement;
+// Helper for generating events for MOUSE_ENTER and MOUSE_LEAVE
+// from various mouse events
+struct GuiMouseHoverHelper
+{
+	GuiMouseHoverHelper( const GuiElement &target );
+	GuiEvent generate_event( const GuiEvent &e );
+
+  protected:
+	const GuiElement &target_element;
+	bool is_over;
+};
+
 using GuiElementPtr = std::shared_ptr<GuiElement>;
 using GuiEventListener = std::pair<
 		decltype(GuiEvent::type),
@@ -128,7 +145,7 @@ struct GuiElement
 
 	std::vector<GuiEventListener> event_listeners;
 
-	GuiElement() {};
+	GuiElement();
 	virtual ~GuiElement() {};
 
 	bool in_area( const GuiVec2 &_pos ) const;
@@ -143,6 +160,7 @@ struct GuiElement
 
   protected:
 	virtual void init_child( GuiElement *child );
+	GuiMouseHoverHelper hover_helper;
 };
 
 } // namespace gui

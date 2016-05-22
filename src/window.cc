@@ -322,6 +322,12 @@ void Window::handle_event( const GuiEvent &e )
 				(*it)->handle_event( e );
 				break;
 			}
+			// We want to pass MOUSE_MOVE events to all popup elements
+			// so that they can generate their MOUSE_OUT events
+			else if( e.type == MOUSE_MOVE )
+			{
+				(*it)->handle_event( e );
+			}
 		}
 	}
 

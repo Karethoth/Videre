@@ -77,6 +77,29 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 
 			auto menu = make_shared<Menu>();
 
+			auto set_mouse_hover_color = []( GuiElement *element, glm::vec4 hover_color )
+			{
+				const auto normal_color = element->color_bg;
+
+				element->event_listeners.push_back(
+				{
+					GuiEventType::MOUSE_ENTER,
+					[hover_color]( GuiElement *element, const GuiEvent &e )
+					{
+						element->color_bg = hover_color;
+					}
+				} );
+
+				element->event_listeners.push_back(
+				{
+					GuiEventType::MOUSE_LEAVE,
+					[normal_color]( GuiElement *element, const GuiEvent &e )
+					{
+						element->color_bg = normal_color;
+					}
+				} );
+			};
+
 			// Add some test elements
 			auto testMenuItem = make_shared<GuiElement>();
 			testMenuItem->size = { 0, 25 };
@@ -96,6 +119,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 					color_bg = { 0.0, 0.0, 0.0, 0.0 };
 				}
 			} );
+			set_mouse_hover_color( testMenuItem.get(), { 0.0, 0.0, 0.0, 1.0 } );
 			menu->add_child( testMenuItem );
 
 			auto testMenuItem2 = make_shared<GuiElement>();
@@ -116,6 +140,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 					color_bg = { 0.2, 0.3, 0.2, 0.8 };
 				}
 			} );
+			set_mouse_hover_color( testMenuItem2.get(), { 0.2, 0.3, 0.2, 1.0 } );
 			menu->add_child( testMenuItem2 );
 
 			auto testMenuItem3 = make_shared<GuiElement>();
@@ -136,6 +161,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 					color_bg = { 0.2, 0.2, 0.3, 0.8 };
 				}
 			} );
+			set_mouse_hover_color( testMenuItem3.get(), { 0.2, 0.2, 0.3, 1.0 } );
 			menu->add_child( testMenuItem3 );
 
 			popupMenu->add_child( menu );
