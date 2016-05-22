@@ -55,7 +55,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gui_menu.cc">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

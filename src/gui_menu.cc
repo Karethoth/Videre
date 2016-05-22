@@ -31,12 +31,14 @@ void Menu::handle_event( const GuiEvent &e )
 }
 
 
+
 void Menu::add_child( GuiElementPtr child )
 {
 	children.push_back( child );
 	child->parent = this;
 	fit_children();
 }
+
 
 
 void Menu::fit_children()
@@ -64,3 +66,19 @@ void Menu::fit_children()
 		child_position_y += child_current_size.h;
 	}
 }
+
+
+GuiVec2 Menu::get_minimum_size() const
+{
+	// Fit the menu to the children for now
+	// TODO: Add a way to set the maximum height for menu, scrollable when more content than room
+
+	int minimum_height = 0;
+	for( const auto& child : children )
+	{
+		minimum_height += child->size.h;
+	}
+
+	return{ size.w, minimum_height };
+}
+

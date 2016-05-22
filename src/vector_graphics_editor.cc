@@ -1,4 +1,5 @@
 #include "vector_graphics_editor.hh"
+#include "gui.hh"
 #include "gui_layouts.hh"
 #include "gui_menu.hh"
 #include <memory>
@@ -48,7 +49,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 	canvas->event_listeners.push_back(
 	{
 		GuiEventType::MOUSE_BUTTON,
-		[]( GuiElement *element, const GuiEvent &e )
+		[&color_bg=color_bg]( GuiElement *element, const GuiEvent &e )
 		{
 			auto root = element->get_root();
 			auto window = dynamic_cast<Window*>( root );
@@ -80,12 +81,62 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 			auto testMenuItem = make_shared<GuiElement>();
 			testMenuItem->size = { 0, 25 };
 			testMenuItem->color_bg = { 0.0, 0.0, 0.0, 0.8 };
+			testMenuItem->event_listeners.push_back(
+			{
+				GuiEventType::MOUSE_BUTTON,
+				[&color_bg = color_bg]( GuiElement *element, const GuiEvent &e )
+				{
+					if( e.mouse_button.button != 1 ||
+					    e.mouse_button.state != RELEASED ||
+					    !element->in_area( e.mouse_button.pos ) )
+					{
+						return;
+					}
+
+					color_bg = { 0.0, 0.0, 0.0, 0.0 };
+				}
+			} );
 			menu->add_child( testMenuItem );
 
 			auto testMenuItem2 = make_shared<GuiElement>();
 			testMenuItem2->size = { 0, 25 };
-			testMenuItem2->color_bg = { 0.0, 0.0, 0.0, 0.2 };
+			testMenuItem2->color_bg = { 0.2, 0.3, 0.2, 0.8 };
+			testMenuItem2->event_listeners.push_back(
+			{
+				GuiEventType::MOUSE_BUTTON,
+				[&color_bg = color_bg]( GuiElement *element, const GuiEvent &e )
+				{
+					if( e.mouse_button.button != 1 ||
+					    e.mouse_button.state != RELEASED ||
+					    !element->in_area( e.mouse_button.pos ) )
+					{
+						return;
+					}
+
+					color_bg = { 0.2, 0.3, 0.2, 0.8 };
+				}
+			} );
 			menu->add_child( testMenuItem2 );
+
+			auto testMenuItem3 = make_shared<GuiElement>();
+			testMenuItem3->size = { 0, 25 };
+			testMenuItem3->color_bg = { 0.2, 0.2, 0.3, 0.8 };
+			testMenuItem3->event_listeners.push_back(
+			{
+				GuiEventType::MOUSE_BUTTON,
+				[&color_bg = color_bg]( GuiElement *element, const GuiEvent &e )
+				{
+					if( e.mouse_button.button != 1 ||
+					    e.mouse_button.state != RELEASED ||
+					    !element->in_area( e.mouse_button.pos ) )
+					{
+						return;
+					}
+
+					color_bg = { 0.2, 0.2, 0.3, 0.8 };
+				}
+			} );
+			menu->add_child( testMenuItem3 );
 
 			popupMenu->add_child( menu );
 
@@ -96,7 +147,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 			popupMenu->handle_event( event );
 
 			event.type = RESIZE;
-			event.resize.size = { 100, 100 };
+			event.resize.size = { 100, 0 };
 			popupMenu->handle_event( event );
 
 			popupMenu->parent = window;
