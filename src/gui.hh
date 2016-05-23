@@ -19,7 +19,7 @@ enum GuiButtonState  { RELEASED, PRESSED };
 enum GuiEventType
 {
 	NO_EVENT, MOVE, RESIZE,
-	MOUSE_BUTTON, MOUSE_SCROLL, MOUSE_MOVE, MOUSE_DRAG, MOUSE_DOUBLE_CLICK,
+	MOUSE_BUTTON, MOUSE_SCROLL, MOUSE_MOVE, MOUSE_DRAG, MOUSE_DRAG_END, MOUSE_DOUBLE_CLICK,
 	WINDOW_BLUR, WINDOW_FOCUS, MOUSE_ENTER, MOUSE_LEAVE
 };
 
@@ -83,16 +83,16 @@ struct GuiEvent
 
 		struct
 		{
-			int button;
-			GuiVec2 pos;
+			GuiVec2        pos;
 			GuiButtonState state;
+			int            button;
 		} mouse_button;
 
 		struct
 		{
-			GuiVec2 pos;
+			GuiVec2      pos;
 			GuiDirection direction;
-			int value;
+			int          value;
 		} mouse_scroll;
 
 		struct
@@ -104,12 +104,20 @@ struct GuiEvent
 		{
 			GuiVec2 pos_start;
 			GuiVec2 pos_current;
+			int     button;
 		} mouse_drag;
 
 		struct
 		{
+			GuiVec2 pos_start;
+			GuiVec2 pos_end;
+			int     button;
+		} mouse_drag_end;
+
+		struct
+		{
 			GuiVec2 pos;
-			int button;
+			int     button;
 		} mouse_double_click;
 	};
 

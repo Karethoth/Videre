@@ -96,12 +96,15 @@ void Window::handle_sdl_event( const SDL_Event &e )
 	GuiEvent gui_event;
 	GuiVec2  min_size;
 
+	// TODO: Move to settings
 	static const auto mouse_double_click_threshold = chrono::milliseconds( 500 );
 
 	// TODO: Make these non-static
+	static int     mouse_down_button;
 	static GuiVec2 mouse_down_pos;
-	static bool  mouse_down = false;
-	static auto last_mouse_down = chrono::steady_clock::now();
+	static bool    mouse_down        = false;
+	static bool    mouse_dragged     = false;
+	static auto    last_mouse_down   = chrono::steady_clock::now();
 
 	switch( e.type )
 	{
@@ -162,13 +165,16 @@ void Window::handle_sdl_event( const SDL_Event &e )
 		case SDL_MOUSEMOTION:
 			if( mouse_down )
 			{
-				gui_event.type = MOUSE_DRAG;
-				gui_event.mouse_drag.pos_start = mouse_down_pos;
+				mouse_dragged                    = true;
+				gui_event.type                   = MOUSE_DRAG;
+				gui_event.mouse_drag.pos_start   = mouse_down_pos;
 				gui_event.mouse_drag.pos_current = { e.motion.x, e.motion.y };
+				gui_event.mouse_drag.button      = mouse_down_button;
 			}
 			else
 			{
-				gui_event.type = MOUSE_MOVE;
+				mouse_dragged            = false;
+				gui_event.type           = MOUSE_MOVE;
 				gui_event.mouse_move.pos = { e.motion.x, e.motion.y };
 			}
 			handle_event( gui_event );
@@ -176,29 +182,42 @@ void Window::handle_sdl_event( const SDL_Event &e )
 
 		case SDL_MOUSEBUTTONUP:
 			mouse_down = false;
-			gui_event.type = MOUSE_BUTTON;
-			gui_event.mouse_button.button = e.button.button;
-			gui_event.mouse_button.state = RELEASED;
-			gui_event.mouse_button.pos = { e.button.x, e.button.y };
+			if( !mouse_dragged )
+			{
+				gui_event.type                = MOUSE_BUTTON;
+				gui_event.mouse_button.button = e.button.button;
+				gui_event.mouse_button.state  = RELEASED;
+				gui_event.mouse_button.pos    = { e.button.x, e.button.y };
+			}
+			else
+			{
+				mouse_dragged = false;
+				gui_event.type                     = MOUSE_DRAG_END;
+				gui_event.mouse_drag_end.button    = e.button.button;
+				gui_event.mouse_drag_end.pos_start = mouse_down_pos;
+				gui_event.mouse_drag_end.pos_end   = { e.button.x, e.button.y };
+			}
 			handle_event( gui_event );
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:
-			mouse_down = true;
-			mouse_down_pos = { e.button.x, e.button.y };
+			mouse_down        = true;
+			mouse_down_button = e.button.button;
+			mouse_down_pos    = { e.button.x, e.button.y };
+
 			if( last_mouse_down + mouse_double_click_threshold > chrono::steady_clock::now() )
 			{
-				gui_event.type = MOUSE_DOUBLE_CLICK;
+				gui_event.type                      = MOUSE_DOUBLE_CLICK;
 				gui_event.mouse_double_click.button = e.button.button;
-				gui_event.mouse_double_click.pos = { e.button.x, e.button.y };
+				gui_event.mouse_double_click.pos    = { e.button.x, e.button.y };
 			}
 			else
 			{
-				last_mouse_down = chrono::steady_clock::now();
-				gui_event.type = MOUSE_BUTTON;
+				last_mouse_down               = chrono::steady_clock::now();
+				gui_event.type                = MOUSE_BUTTON;
 				gui_event.mouse_button.button = e.button.button;
-				gui_event.mouse_button.state = PRESSED;
-				gui_event.mouse_button.pos = { e.button.x, e.button.y };
+				gui_event.mouse_button.state  = PRESSED;
+				gui_event.mouse_button.pos    = { e.button.x, e.button.y };
 			}
 			handle_event( gui_event );
 			break;
@@ -291,7 +310,8 @@ void Window::handle_event( const GuiEvent &e )
 	if( e.type == MOUSE_BUTTON ||
 	    e.type == MOUSE_MOVE ||
 	    e.type == MOUSE_SCROLL ||
-	    e.type == MOUSE_DRAG )
+	    e.type == MOUSE_DRAG ||
+		e.type == MOUSE_DRAG_END )
 	{
 		// We want to go over the elements starting from newest one (the last one pushed in)
 		for( auto it = popup_elements.rbegin(); it != popup_elements.rend(); it++ )
@@ -313,6 +333,10 @@ void Window::handle_event( const GuiEvent &e )
 
 				case MOUSE_DRAG:
 					pos = e.mouse_drag.pos_start;
+					break;
+
+				case MOUSE_DRAG_END:
+					pos = e.mouse_drag_end.pos_start;
 					break;
 			}
 

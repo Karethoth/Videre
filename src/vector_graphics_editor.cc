@@ -77,7 +77,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 
 			auto menu = make_shared<Menu>();
 
-			auto set_mouse_hover_color = []( GuiElement *element, glm::vec4 hover_color )
+			auto set_to_act_as_button = []( GuiElement *element, glm::vec4 hover_color )
 			{
 				const auto normal_color = element->color_bg;
 
@@ -96,6 +96,26 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 					[normal_color]( GuiElement *element, const GuiEvent &e )
 					{
 						element->color_bg = normal_color;
+					}
+				} );
+
+				element->event_listeners.push_back(
+				{
+					GuiEventType::MOUSE_DRAG_END,
+					[]( GuiElement *element, const GuiEvent &e )
+					{
+						if( element->in_area( e.mouse_drag_end.pos_start ) &&
+						    element->in_area( e.mouse_drag_end.pos_end ) )
+						{
+							// If mouse drag starts and ends within this element
+							// act as if it's just a mouse click
+							GuiEvent event;
+							event.type = MOUSE_BUTTON;
+							event.mouse_button.state = RELEASED;
+							event.mouse_button.pos = e.mouse_drag_end.pos_end;
+							event.mouse_button.button = e.mouse_drag_end.button;
+							element->handle_event( event );
+						}
 					}
 				} );
 			};
@@ -119,7 +139,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 					color_bg = { 0.0, 0.0, 0.0, 0.0 };
 				}
 			} );
-			set_mouse_hover_color( testMenuItem.get(), { 0.0, 0.0, 0.0, 1.0 } );
+			set_to_act_as_button( testMenuItem.get(), { 0.0, 0.0, 0.0, 1.0 } );
 			menu->add_child( testMenuItem );
 
 			auto testMenuItem2 = make_shared<GuiElement>();
@@ -140,7 +160,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 					color_bg = { 0.2, 0.3, 0.2, 0.8 };
 				}
 			} );
-			set_mouse_hover_color( testMenuItem2.get(), { 0.2, 0.3, 0.2, 1.0 } );
+			set_to_act_as_button( testMenuItem2.get(), { 0.2, 0.3, 0.2, 1.0 } );
 			menu->add_child( testMenuItem2 );
 
 			auto testMenuItem3 = make_shared<GuiElement>();
@@ -161,7 +181,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 					color_bg = { 0.2, 0.2, 0.3, 0.8 };
 				}
 			} );
-			set_mouse_hover_color( testMenuItem3.get(), { 0.2, 0.2, 0.3, 1.0 } );
+			set_to_act_as_button( testMenuItem3.get(), { 0.2, 0.2, 0.3, 1.0 } );
 			menu->add_child( testMenuItem3 );
 
 			popupMenu->add_child( menu );
