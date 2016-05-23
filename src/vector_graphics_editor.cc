@@ -45,6 +45,25 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 	   - should be made easy to add to elements without too much bloat
 	 */
 
+	// Convert mouse drag end within the canvas to a mouse button released
+	canvas->event_listeners.push_back(
+	{
+		GuiEventType::MOUSE_DRAG_END,
+		[]( GuiElement *element, const GuiEvent &e )
+		{
+			if( element->in_area( e.mouse_drag_end.pos_start ) &&
+				element->in_area( e.mouse_drag_end.pos_end ) )
+			{
+				GuiEvent event;
+				event.type                = MOUSE_BUTTON;
+				event.mouse_button.state  = RELEASED;
+				event.mouse_button.pos    = e.mouse_drag_end.pos_end;
+				event.mouse_button.button = e.mouse_drag_end.button;
+				element->handle_event( event );
+			}
+		}
+	} );
+
 	// Add event listener for right mouse button within the canvas
 	canvas->event_listeners.push_back(
 	{
