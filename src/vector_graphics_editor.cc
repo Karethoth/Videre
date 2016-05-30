@@ -2,6 +2,7 @@
 #include "gui.hh"
 #include "gui_layouts.hh"
 #include "gui_menu.hh"
+#include "gui_button.hh"
 #include "gl_helpers.hh"
 #include "globals.hh"
 
@@ -115,7 +116,6 @@ void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 }
 
 
-
 void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 {
 	auto window = dynamic_cast<Window*>(get_root());
@@ -131,130 +131,56 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 	auto menu = make_shared<Menu>();
 
-	auto set_to_act_as_button = [](
-		GuiElement *element,
-		PopupElement *popup_element,
-		glm::vec4 hover_color
-	)
+
+	// Add some test buttons
+	auto button1 = make_shared<GuiButton>();
+	button1->size = { 0, 25 };
+	button1->color_bg        = { 0.0, 0.0, 0.0, 0.8 };
+	button1->color_bg_normal = { 0.0, 0.0, 0.0, 0.8 };
+	button1->color_bg_hover  = { 0.0, 0.0, 0.0, 1.0 };
+	button1->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
 	{
-		const auto normal_color = element->color_bg;
-
-		element->event_listeners.push_back(
+		if( e.mouse_button.button != 1 ||
+			e.mouse_button.state != RELEASED ||
+			!element->in_area( e.mouse_button.pos ) )
 		{
-			GuiEventType::MOUSE_ENTER,
-			[hover_color]( GuiElement *element, const GuiEvent &e )
-			{
-				element->color_bg = hover_color;
-			}
-		} );
+			return;
+		}
 
-		element->event_listeners.push_back(
-		{
-			GuiEventType::MOUSE_LEAVE,
-			[normal_color]( GuiElement *element, const GuiEvent &e )
-			{
-				element->color_bg = normal_color;
-			}
-		} );
+		auto item = unique_ptr<vector_img::ImgControlPoint>( new vector_img::ImgControlPoint() );
+		item->x = static_cast<float>( popup_menu->pos.x - this->pos.x);
+		item->y = static_cast<float>( popup_menu->pos.y - this->pos.y );
+		image.layers[0]->items.push_back( move( item ) );
 
-		element->event_listeners.push_back(
-		{
-			GuiEventType::MOUSE_BUTTON,
-			[popup_element]( GuiElement *element, const GuiEvent &e )
-			{
-				if( !element->in_area( e.mouse_button.pos ) ||
-					e.mouse_button.state != RELEASED ||
-					e.mouse_button.button != 1 )
-				{
-					return;
-				}
-				popup_element->deleted = true;
-			}
-		} );
-
-		element->event_listeners.push_back(
-		{
-			GuiEventType::MOUSE_DRAG_END,
-			[]( GuiElement *element, const GuiEvent &e )
-			{
-				if( element->in_area( e.mouse_drag_end.pos_start ) &&
-					element->in_area( e.mouse_drag_end.pos_end ) )
-				{
-					// If mouse drag starts and ends within this element
-					// act as if it's just a mouse click
-					GuiEvent event;
-					event.type = MOUSE_BUTTON;
-					event.mouse_button.state = RELEASED;
-					event.mouse_button.pos = e.mouse_drag_end.pos_end;
-					event.mouse_button.button = e.mouse_drag_end.button;
-					element->handle_event( event );
-				}
-			}
-		} );
+		popup_menu->deleted = true;
 	};
 
-	// Add some test elements
-	auto test_menu_item = make_shared<GuiElement>();
-	test_menu_item->size = { 0, 25 };
-	test_menu_item->color_bg = { 0.0, 0.0, 0.0, 0.8 };
-	test_menu_item->event_listeners.push_back(
-	{
-		GuiEventType::MOUSE_BUTTON,
-		[&image=image]( GuiElement *element, const GuiEvent &e )
-		{
-			if( e.mouse_button.button != 1 ||
-				e.mouse_button.state != RELEASED ||
-				!element->in_area( e.mouse_button.pos ) )
-			{
-				return;
-			}
+	menu->add_child( button1 );
 
-			auto item = unique_ptr<vector_img::ImgControlPoint>(new vector_img::ImgControlPoint());
-			item->x = static_cast<float>( e.mouse_button.pos.x );
-			item->y = static_cast<float>( e.mouse_button.pos.y );
-			image.layers[0]->items.push_back( move( item ) );
-		}
-	} );
-	set_to_act_as_button( test_menu_item.get(), popup_menu.get(), { 0.0, 0.0, 0.0, 1.0 } );
-	menu->add_child( test_menu_item );
-
-	auto test_menu_item2 = make_shared<GuiElement>();
-	test_menu_item2->size = { 0, 25 };
-	test_menu_item2->color_bg = { 0.2, 0.3, 0.2, 0.8 };
-	test_menu_item2->event_listeners.push_back(
+	auto button2 = make_shared<GuiButton>();
+	button2->size = { 0, 25 };
+	button2->color_bg        = { 0.0, 0.0, 0.0, 0.8 };
+	button2->color_bg_normal = { 0.0, 0.0, 0.0, 0.8 };
+	button2->color_bg_hover  = { 0.0, 0.0, 0.0, 1.0 };
+	button2->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
 	{
-		GuiEventType::MOUSE_BUTTON,
-		[]( GuiElement *element, const GuiEvent &e )
+		if( e.mouse_button.button != 1 ||
+			e.mouse_button.state != RELEASED ||
+			!element->in_area( e.mouse_button.pos ) )
 		{
-			if( e.mouse_button.button != 1 ||
-				e.mouse_button.state != RELEASED ||
-				!element->in_area( e.mouse_button.pos ) )
-			{
-				return;
-			}
+			return;
 		}
-	} );
-	set_to_act_as_button( test_menu_item2.get(), popup_menu.get(), { 0.2, 0.3, 0.2, 1.0 } );
-	menu->add_child( test_menu_item2 );
 
-	auto test_menu_item3 = make_shared<GuiElement>();
-	test_menu_item3->size = { 0, 25 };
-	test_menu_item3->color_bg = { 0.2, 0.2, 0.3, 0.8 };
-	test_menu_item3->event_listeners.push_back(
-	{
-		GuiEventType::MOUSE_BUTTON,
-		[]( GuiElement *element, const GuiEvent &e )
-		{
-			if( e.mouse_button.button != 1 ||
-				e.mouse_button.state != RELEASED ||
-				!element->in_area( e.mouse_button.pos ) )
-			{
-				return;
-			}
-		}
-	} );
-	set_to_act_as_button( test_menu_item3.get(), popup_menu.get(), { 0.2, 0.2, 0.3, 1.0 } );
-	menu->add_child( test_menu_item3 );
+		auto item = unique_ptr<vector_img::ImgLine>( new vector_img::ImgLine() );
+		item->a.x = static_cast<float>( popup_menu->pos.x - this->pos.x );
+		item->a.y = static_cast<float>( popup_menu->pos.y - this->pos.y );
+		item->b.x = static_cast<float>( popup_menu->pos.x - this->pos.x + 50 );
+		item->b.y = static_cast<float>( popup_menu->pos.y - this->pos.y );
+		image.layers[0]->items.push_back( move( item ) );
+
+		popup_menu->deleted = true;
+	};
+	menu->add_child( button2 );
 
 	popup_menu->add_child( menu );
 
@@ -271,7 +197,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	popup_menu->parent = window;
 
 
-	// Check if the element would fit better above or on the left side the pointer
+	// Check if the element would fit better above or on the left side of the target position
 	event.type = MOVE;
 	event.move.pos = tgt_pos;
 
@@ -279,20 +205,25 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	if( tgt_pos.x + context_menu_size.w > pos.x + size.w &&
 		tgt_pos.x - context_menu_size.w >= pos.x )
 	{
-		event.move.pos.x = tgt_pos.x - context_menu_size.w;
+		event.move.pos.x = pos.x + size.w - context_menu_size.w;
 	}
 
 	if( tgt_pos.y + context_menu_size.h > pos.y + size.h &&
 		tgt_pos.y - context_menu_size.h >= pos.y )
 	{
-		event.move.pos.y = tgt_pos.y - context_menu_size.h;
+		event.move.pos.y = pos.y + size.h - context_menu_size.h;
 	}
 	if( event.move.pos.x || event.move.pos.y )
 	{
-		//popup_menu->handle_event( event );
+		popup_menu->handle_event( event );
 	}
 
 	window->popup_elements.push_back( popup_menu );
+	
+	// Send the current mouse position to the popup menu
+	event.type = MOUSE_MOVE;
+	SDL_GetMouseState( &event.mouse_move.pos.x, &event.mouse_move.pos.y );
+	popup_menu->handle_event( event );
 }
 
 

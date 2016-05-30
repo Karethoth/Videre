@@ -137,6 +137,7 @@
     <ClCompile Include="src\common_tools.cc" />
     <ClCompile Include="src\gl_helpers.cc" />
     <ClCompile Include="src\gui.cc" />
+    <ClCompile Include="src\gui_button.cc" />
     <ClCompile Include="src\gui_gl.cc" />
     <ClCompile Include="src\gui_layouts.cc" />
     <ClCompile Include="src\gui_menu.cc" />
@@ -155,6 +156,7 @@
     <ClInclude Include="src\globals.hh" />
     <ClInclude Include="src\gl_helpers.hh" />
     <ClInclude Include="src\gui.hh" />
+    <ClInclude Include="src\gui_button.hh" />
     <ClInclude Include="src\gui_layouts.hh" />
     <ClInclude Include="src\gui_gl.hh" />
     <ClInclude Include="src\gui_menu.hh" />
