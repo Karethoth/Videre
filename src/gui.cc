@@ -183,10 +183,11 @@ void GuiElement::handle_event( const GuiEvent &e )
 		}
 	}
 
-	// Cut off events that shouldn't be passed to children
+	// Filter events that shouldn't be passed to children
 	switch( e.type )
 	{
 		case MOUSE_ENTER:
+		case MOUSE_LEAVE:
 			return;
 	}
 

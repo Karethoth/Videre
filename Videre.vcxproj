@@ -147,6 +147,7 @@
     <ClCompile Include="src\shader.cc" />
     <ClCompile Include="src\shaderProgram.cc" />
     <ClCompile Include="src\vector_graphics_editor.cc" />
+    <ClCompile Include="src\vector_img.cc" />
     <ClCompile Include="src\window.cc" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +167,7 @@
     <ClInclude Include="src\shader.hh" />
     <ClInclude Include="src\shaderProgram.hh" />
     <ClInclude Include="src\typedefs.hh" />
+    <ClInclude Include="src\vector_img.hh" />
     <ClInclude Include="src\window.hh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -5,8 +5,10 @@
 #include "gl_helpers.hh"
 
 #include <math.h>
-#include <iostream>
 #include <chrono>
+#include <iostream>
+#include <algorithm>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/vector_angle.hpp>
@@ -24,7 +26,7 @@ Window::Window()
 : closed(false), sdl_id(0), active_element(nullptr)
 {
 	pos = { 0, 0 };
-	size = { 460, 320 };
+	size = { 600, 400 };
 
 	auto window_ptr = SDL_CreateWindow(
 		"Videre",
@@ -354,6 +356,16 @@ void Window::handle_event( const GuiEvent &e )
 			}
 		}
 	}
+
+	popup_elements.erase( remove_if( popup_elements.begin(), popup_elements.end(), []( auto element )
+	{
+		auto deleted = element->deleted;
+		if( deleted )
+		{
+			return true;
+		}
+		return deleted;
+	} ), popup_elements.end());
 
 	if( captured_by_popup )
 	{

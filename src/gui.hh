@@ -124,6 +124,8 @@ struct GuiEvent
 	GuiEvent() {};
 };
 
+
+
 // Helper for generating events for MOUSE_ENTER and MOUSE_LEAVE
 // from various mouse events
 struct GuiMouseHoverHelper
@@ -136,10 +138,14 @@ struct GuiMouseHoverHelper
 	bool is_over;
 };
 
+
+
 using GuiElementPtr = std::shared_ptr<GuiElement>;
 using GuiEventListener = std::pair<
 		decltype(GuiEvent::type),
 		std::function<void(GuiElement*, const GuiEvent&)>>;
+
+
 
 struct GuiElement
 {
