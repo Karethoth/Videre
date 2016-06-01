@@ -21,7 +21,8 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 
 	// Add toolbar to the top element
 	auto toolbar = make_shared<VectorGraphicsToolbar>();
-	toolbar->color_bg = { 0.0, 0.0, 0.0, 0.5 };
+	toolbar->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.5 };
+	toolbar->style.hover.color_bg = { 0.0, 0.0, 0.0, 0.5 };
 	main_layout->add_child( toolbar );
 
 	// Split the bottom into left and right parts
@@ -32,13 +33,15 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 	// Add canvas to the left element
 	auto canvas = make_shared<VectorGraphicsCanvas>();
 	canvas_element = canvas.get();
-	canvas->color_bg = { 1.0, 1.0, 1.0, 0.2 };
+	canvas->style.normal.color_bg = { 1.0, 1.0, 1.0, 0.2 };
+	canvas->style.hover.color_bg = { 1.0, 1.0, 1.0, 0.2 };
 	sub_layout->add_child( canvas );
 
 	// Add properties view to the right element
 	auto properties = make_shared<VectorGraphicsProperties>();
 	properties_element = properties.get();
-	properties->color_bg = { 0.0, 0.0, 0.0, 0.2 };
+	properties->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.2 };
+	properties->style.hover.color_bg = { 0.0, 0.0, 0.0, 0.2 };
 	sub_layout->add_child( properties );
 
 	add_child( main_layout );
@@ -50,10 +53,12 @@ VectorGraphicsEditor::~VectorGraphicsEditor()
 }
 
 
+
 void VectorGraphicsEditor::render() const
 {
 	GuiElement::render();
 }
+
 
 
 void VectorGraphicsEditor::handle_event( const GuiEvent &e )
@@ -127,7 +132,9 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	window->popup_elements.clear();
 
 	auto popup_menu = make_shared<PopupElement>();
-	popup_menu->color_bg = { 0.8, 0.8, 0.8, 0.6 };
+	popup_menu->style.normal.color_bg = { 0.8, 0.8, 0.8, 0.6 };
+	popup_menu->style.hover.color_bg = { 0.8, 0.8, 0.8, 0.6 };
+	popup_menu->target_pos = tgt_pos;
 
 	auto menu = make_shared<Menu>();
 
@@ -135,9 +142,8 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	// Add some test buttons
 	auto button1 = make_shared<GuiButton>();
 	button1->size = { 0, 25 };
-	button1->color_bg        = { 0.0, 0.0, 0.0, 0.8 };
-	button1->color_bg_normal = { 0.0, 0.0, 0.0, 0.8 };
-	button1->color_bg_hover  = { 0.0, 0.0, 0.0, 1.0 };
+	button1->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
+	button1->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
 	button1->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
 	{
 		if( e.mouse_button.button != 1 ||
@@ -148,8 +154,8 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 		}
 
 		auto item = unique_ptr<vector_img::ImgControlPoint>( new vector_img::ImgControlPoint() );
-		item->x = static_cast<float>( popup_menu->pos.x - this->pos.x);
-		item->y = static_cast<float>( popup_menu->pos.y - this->pos.y );
+		item->x = static_cast<float>( popup_menu->target_pos.x - this->pos.x);
+		item->y = static_cast<float>( popup_menu->target_pos.y - this->pos.y );
 		image.layers[0]->items.push_back( move( item ) );
 
 		popup_menu->deleted = true;
@@ -159,9 +165,8 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 	auto button2 = make_shared<GuiButton>();
 	button2->size = { 0, 25 };
-	button2->color_bg        = { 0.0, 0.0, 0.0, 0.8 };
-	button2->color_bg_normal = { 0.0, 0.0, 0.0, 0.8 };
-	button2->color_bg_hover  = { 0.0, 0.0, 0.0, 1.0 };
+	button2->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
+	button2->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
 	button2->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
 	{
 		if( e.mouse_button.button != 1 ||
@@ -172,10 +177,10 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 		}
 
 		auto item = unique_ptr<vector_img::ImgLine>( new vector_img::ImgLine() );
-		item->a.x = static_cast<float>( popup_menu->pos.x - this->pos.x );
-		item->a.y = static_cast<float>( popup_menu->pos.y - this->pos.y );
-		item->b.x = static_cast<float>( popup_menu->pos.x - this->pos.x + 50 );
-		item->b.y = static_cast<float>( popup_menu->pos.y - this->pos.y );
+		item->a.x = static_cast<float>( popup_menu->target_pos.x - this->pos.x );
+		item->a.y = static_cast<float>( popup_menu->target_pos.y - this->pos.y );
+		item->b.x = static_cast<float>( popup_menu->target_pos.x - this->pos.x + 50 );
+		item->b.y = static_cast<float>( popup_menu->target_pos.y - this->pos.y );
 		image.layers[0]->items.push_back( move( item ) );
 
 		popup_menu->deleted = true;

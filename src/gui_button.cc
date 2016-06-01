@@ -8,14 +8,6 @@ void GuiButton::handle_event( const GuiEvent &e )
 {
 	switch( e.type )
 	{
-		case MOUSE_ENTER:
-			color_bg = color_bg_hover;
-			break;
-
-		case MOUSE_LEAVE:
-			color_bg = color_bg_normal;
-			break;
-
 		case MOUSE_BUTTON:
 			if( on_click )
 			{
@@ -38,12 +30,5 @@ void GuiButton::handle_event( const GuiEvent &e )
 			}
 	}
 	GuiElement::handle_event( e );
-}
-
-
-
-GuiVec2 GuiButton::get_minimum_size() const
-{
-	return size;
 }
 

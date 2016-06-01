@@ -147,6 +147,29 @@ using GuiEventListener = std::pair<
 
 
 
+enum GuiElementStyleState
+{
+	NORMAL,
+	HOVER
+};
+
+
+
+struct GuiElementStyle
+{
+	struct StyleRules
+	{
+		glm::vec4 color_bg = { 0, 0, 0, 0 };
+	};
+
+	StyleRules normal;
+	StyleRules hover;
+
+	const StyleRules& get( const GuiElementStyleState state ) const;
+};
+
+
+
 struct GuiElement
 {
 	GuiVec2 pos;
@@ -155,7 +178,8 @@ struct GuiElement
 	GuiElement *parent = nullptr;
 	std::vector<GuiElementPtr> children;
 
-	glm::vec4 color_bg = { 0, 0, 0, 0 };
+	GuiElementStyle style;
+	GuiElementStyleState style_state;
 
 	std::vector<GuiEventListener> event_listeners;
 

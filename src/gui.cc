@@ -59,9 +59,22 @@ GuiEvent GuiMouseHoverHelper::generate_event( const GuiEvent &e )
 }
 
 
+const GuiElementStyle::StyleRules& GuiElementStyle::get( const GuiElementStyleState state ) const
+{
+	switch( state )
+	{
+		case HOVER:
+			return hover;
+
+		case NORMAL:
+		default:
+			return normal;
+	}
+}
+
+
 GuiElement::GuiElement()
 : parent( nullptr ),
-  color_bg{ 0.0 },
   hover_helper( *this )
 {
 }
@@ -135,6 +148,7 @@ void GuiElement::init_child( GuiElement *child )
 
 void GuiElement::render() const
 {
+	const auto color_bg = style.get( style_state ).color_bg;
 	if( color_bg.a > 0.f )
 	{
 		auto shader = Globals::shaders.find( "2d" );
@@ -157,6 +171,14 @@ void GuiElement::handle_event( const GuiEvent &e )
 {
 	switch( e.type )
 	{
+		case MOUSE_ENTER:
+			style_state = HOVER;
+			break;
+
+		case MOUSE_LEAVE:
+			style_state = NORMAL;
+			break;
+
 		case MOVE:
 			pos = e.move.pos;
 			break;
