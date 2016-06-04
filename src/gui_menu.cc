@@ -1,5 +1,7 @@
 #pragma once
 #include "gui_menu.hh"
+#include "gl_helpers.hh"
+#include "globals.hh"
 
 using namespace std;
 using namespace gui;
@@ -68,6 +70,7 @@ void Menu::fit_children()
 }
 
 
+
 GuiVec2 Menu::get_minimum_size() const
 {
 	// Fit the menu to the children for now
@@ -82,3 +85,21 @@ GuiVec2 Menu::get_minimum_size() const
 	return{ size.w, minimum_height };
 }
 
+
+void MenuSpacer::handle_event( const GuiEvent &e )
+{
+	if( e.type == RESIZE )
+	{
+		size.w = e.resize.size.w;
+		return;
+	}
+
+	GuiElement::handle_event( e );
+}
+
+
+
+GuiVec2 MenuSpacer::get_minimum_size() const
+{
+	return{ 0, size.h };
+}

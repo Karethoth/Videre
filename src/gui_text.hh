@@ -7,16 +7,28 @@
 
 namespace gui
 {
-	void render_text(
-		string_u8 text,
+	void render_unicode(
+		string_unicode text,
 		gui::GuiVec2 position,
 		const gui::Window &window,
 		std::string font = "default",
 		float scale = 1.f
 	);
 
-	struct TextArea : GuiElement
+
+
+	struct GuiLabel : GuiElement
 	{
+		string_unicode content;
+		virtual void render() const override;
+		virtual void handle_event( const GuiEvent &e ) override;
+	};
+
+
+
+	struct GuiTextArea : GuiElement
+	{
+		string_unicode content;
 		virtual void render() const override;
 		virtual void handle_event( const GuiEvent &e ) override;
 	};

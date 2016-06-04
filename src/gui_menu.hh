@@ -13,5 +13,13 @@ struct Menu : GuiElement
   protected:
 	void fit_children();
 };
+
+
+// Spacer to put between menu options
+struct MenuSpacer : GuiElement
+{
+	virtual void handle_event( const GuiEvent &e ) override;
+	virtual GuiVec2 get_minimum_size() const override;
+};
 }
 

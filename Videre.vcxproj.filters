@@ -63,6 +63,9 @@
     <ClCompile Include="src\gui_button.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\typedefs.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh">

@@ -149,87 +149,6 @@ struct FontFaceIdentity
 using FontFaceContents = map<unsigned long, GlCharacter>;
 static map<FontFaceIdentity, FontFaceContents> font_face_library;
 
-
-size_t get_octet_count( const char byte )
-{
-	if( (byte & 0b10000000) == 0 )
-	{
-		return 1;
-	}
-	else if( (byte & 0b11100000) == 0b11000000 )
-	{
-		return 2;
-	}
-	else if( (byte & 0b11110000) == 0b11100000 )
-	{
-		return 3;
-	}
-	else if( (byte & 0b11111000) == 0b11110000 )
-	{
-		return 4;
-	}
-	else return 1;
-}
-
-
-unsigned long utf8_to_unicode( unsigned long c )
-{
-	unsigned long val = 0;
-
-	if( (c & 0xf8000000) == 0xf0000000 )
-	{
-		val |= (c & 0x7000000) >> 6;
-		val |= (c & 0x3f0000) >> 4;
-		val |= (c & 0x3f00) >> 2;
-		val |= (c & 0x3f);
-	}
-	else if( (c & 0xf00000) == 0xe00000 )
-	{
-		val |= (c & 0xf0000) >> 4;
-		val |= (c & 0x3f00) >> 2;
-		val |= (c & 0x3f);
-	}
-	else if( (c & 0xe000) == 0xc000 )
-	{
-		val |= (c& 0x1f00) >> 2;
-		val |= (c & 0x3f);
-	}
-	else val = c;
-
-	return val;
-}
-
-
-unsigned long read_next_character( const char *str, const char * const end, size_t &bytes )
-{
-	unsigned long character = 0;
-
-	if( str >= end )
-	{
-		bytes = 1;
-		return 0;
-	}
-
-	auto octet_count = get_octet_count( *str );
-	if( (str + octet_count) > end )
-	{
-		octet_count = end - str;
-	}
-
-	bytes = octet_count ? octet_count : 1;
-
-	character |= str[0] & 0xff;
-	str++;
-	while( octet_count-- > 1 )
-	{
-		character <<= 8;
-		character |= str++[0] & 0xff;
-	}
-
-	return utf8_to_unicode( character );
-}
-
-
 GlCharacter add_character( FT_Face face, unsigned long c )
 {
 	auto glyph_index = FT_Get_Char_Index( face, c );
@@ -287,9 +206,6 @@ size_t gl::render_text_2d(
 	glm::vec2 scale,
 	FT_Face face )
 {
-	const auto str_start = text.c_str();
-	const auto str_end = str_start + text.length();
-
 	static GLuint vao;
 	static GLuint vbo;
 
@@ -325,9 +241,6 @@ size_t gl::render_text_2d(
 	glUniform1i( tex_uniform, 0 );
 	gui::any_gl_errors();
 
-	auto str_ptr = str_start;
-	unsigned long current_character = 0;
-	size_t bytes_read = 0;
 	float caret_pos_x = pos.x;
 	size_t offset = 0;
 
@@ -341,22 +254,22 @@ size_t gl::render_text_2d(
 	const auto& font_face_contents = font_face_library[{ face }];
 
 	GlCharacter previous_character{};
-	
-	while( (current_character = read_next_character(str_ptr, str_end, bytes_read)) )
+
+	const auto unicode_str = u8_to_unicode( text );
+	for( const auto code_point : unicode_str )
 	{
-		str_ptr += bytes_read;
 		const float caret_pos_x = pos.x + offset;
 
 		// Find or create the character
 		GlCharacter c;
-		auto it = font_face_contents.find( current_character );
+		auto it = font_face_contents.find( code_point );
 		if( it != font_face_contents.end() )
 		{
 			c = it->second;
 		}
 		else
 		{
-			c = add_character( face, current_character );
+			c = add_character( face, code_point );
 		}
 		gui::any_gl_errors();
 

@@ -138,7 +138,6 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 	auto menu = make_shared<Menu>();
 
-
 	// Add some test buttons
 	auto button1 = make_shared<GuiButton>();
 	button1->size = { 0, 25 };
@@ -163,6 +162,14 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 	menu->add_child( button1 );
 
+	// Add spacer
+	auto spacer = make_shared<MenuSpacer>();
+	spacer->style.normal.color_bg = glm::vec4{ 0, 0, 0, 0.6 };
+	spacer->style.hover.color_bg = glm::vec4{ 0, 0, 0, 0.6 };
+	spacer->size.h = 1;
+	menu->add_child( spacer );
+
+	// Add another button
 	auto button2 = make_shared<GuiButton>();
 	button2->size = { 0, 25 };
 	button2->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };

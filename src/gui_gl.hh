@@ -27,3 +27,4 @@ bool any_gl_errors();
 void clear_gl_errors();
 
 } // namespace gui
+

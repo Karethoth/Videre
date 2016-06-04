@@ -147,6 +147,7 @@
     <ClCompile Include="src\settings.cc" />
     <ClCompile Include="src\shader.cc" />
     <ClCompile Include="src\shaderProgram.cc" />
+    <ClCompile Include="src\typedefs.cc" />
     <ClCompile Include="src\vector_graphics_editor.cc" />
     <ClCompile Include="src\vector_img.cc" />
     <ClCompile Include="src\window.cc" />

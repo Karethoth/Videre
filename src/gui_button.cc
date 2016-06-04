@@ -1,5 +1,4 @@
 #include "gui_button.hh"
-
 using namespace std;
 using namespace gui;
 
