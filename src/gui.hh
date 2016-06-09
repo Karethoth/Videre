@@ -159,7 +159,8 @@ struct GuiElementStyle
 {
 	struct StyleRules
 	{
-		glm::vec4 color_bg = { 0, 0, 0, 0 };
+		glm::vec4 color_bg   = { 0, 0, 0, 0 };
+		glm::vec4 color_text = { 1, 1, 1, 1 };
 	};
 
 	StyleRules normal;

@@ -1,4 +1,6 @@
-#include "typedefs.hh"
+#include "text_helpers.hh"
+#include "gui_gl.hh"
+#include <iostream>
 
 
 namespace
@@ -54,6 +56,7 @@ namespace
 	}
 
 
+
 	string_unicode::value_type read_next_unicode_code_point( const char *str, const char * const end, size_t &bytes )
 	{
 		unsigned long character = 0;
@@ -106,4 +109,54 @@ string_unicode u8_to_unicode( const string_u8 &str )
 	return unicode_str;
 }
 
+
+
+GlCharacter add_character( FT_Face face, unsigned long c )
+{
+	auto glyph_index = FT_Get_Char_Index( face, c );
+	if( FT_Load_Char( face, c, FT_LOAD_RENDER ) )
+	{
+		std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+		return {};
+	}
+
+	// Generate texture
+	GLuint texture;
+	glGenTextures( 1, &texture );
+	glBindTexture( GL_TEXTURE_2D, texture );
+	gui::any_gl_errors();
+
+	// Set texture options
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RED,
+		face->glyph->bitmap.width,
+		face->glyph->bitmap.rows,
+		0,
+		GL_RED,
+		GL_UNSIGNED_BYTE,
+		face->glyph->bitmap.buffer
+	);
+	gui::any_gl_errors();
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
+
+	// Now store character for later use
+	GlCharacter character = {
+		texture,
+		glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
+		glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
+		(GLuint)face->glyph->advance.x,
+		glyph_index
+	};
+
+	font_face_library[FontFaceIdentity( face )].insert( { c, character } );
+	return character;
+}
 

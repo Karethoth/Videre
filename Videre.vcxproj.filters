@@ -63,7 +63,10 @@
     <ClCompile Include="src\gui_button.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\typedefs.cc">
+    <ClCompile Include="src\text_helpers.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gui_text.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -123,6 +126,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui_button.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\text_helpers.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

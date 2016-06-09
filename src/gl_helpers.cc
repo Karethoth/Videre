@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gl_helpers.hh"
+#include "text_helpers.hh"
 #include "globals.hh"
 #include "mesh.hh"
 
@@ -112,91 +113,6 @@ void gl::render_quad_2d( const ShaderProgram &shader, const glm::vec2 &window_si
 }
 
 
-
-struct GlCharacter
-{
-	GLuint gl_texture;
-	glm::ivec2 size;
-	glm::ivec2 bearing;
-	GLuint advance;
-	FT_UInt glyph;
-};
-
-struct FontFaceIdentity
-{
-	const FT_Face face_ptr;
-	const size_t size;
-
-	FontFaceIdentity( const FT_Face font_face_ptr )
-		: face_ptr( font_face_ptr ), size( font_face_ptr->size->metrics.height ) {}
-
-	bool operator< ( const FontFaceIdentity &other) const
-	{
-		if( face_ptr < other.face_ptr )
-		{
-			return true;
-		}
-		else if( face_ptr == other.face_ptr &&
-		         size < other.size )
-		{
-			return true;
-		}
-		else return false;
-	}
-};
-
-
-using FontFaceContents = map<unsigned long, GlCharacter>;
-static map<FontFaceIdentity, FontFaceContents> font_face_library;
-
-GlCharacter add_character( FT_Face face, unsigned long c )
-{
-	auto glyph_index = FT_Get_Char_Index( face, c );
-	if( FT_Load_Char( face, c, FT_LOAD_RENDER ) )
-	{
-		std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-		return {};
-	}
-
-	// Generate texture
-	GLuint texture;
-	glGenTextures( 1, &texture );
-	glBindTexture( GL_TEXTURE_2D, texture );
-	gui::any_gl_errors();
-
-	// Set texture options
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
-	glTexImage2D(
-		GL_TEXTURE_2D,
-		0,
-		GL_RED,
-		face->glyph->bitmap.width,
-		face->glyph->bitmap.rows,
-		0,
-		GL_RED,
-		GL_UNSIGNED_BYTE,
-		face->glyph->bitmap.buffer
-	);
-	gui::any_gl_errors();
-
-	glBindTexture( GL_TEXTURE_2D, 0 );
-
-	// Now store character for later use
-	GlCharacter character = {
-		texture,
-		glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
-		glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
-		(GLuint)face->glyph->advance.x,
-		glyph_index
-	};
-
-	font_face_library[FontFaceIdentity( face )].insert( { c, character } );
-	return character;
-}
 
 size_t gl::render_text_2d(
 	const ShaderProgram &shader,

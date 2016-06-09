@@ -27,7 +27,9 @@ void GuiButton::handle_event( const GuiEvent &e )
 				event.mouse_button.button = e.mouse_drag_end.button;
 				handle_event( event );
 			}
+			break;
 	}
+
 	GuiElement::handle_event( e );
 }
 

@@ -142,12 +142,13 @@
     <ClCompile Include="src\gui_layouts.cc" />
     <ClCompile Include="src\gui_menu.cc" />
     <ClCompile Include="src\gui_popup_element.cc" />
+    <ClCompile Include="src\gui_text.cc" />
     <ClCompile Include="src\main.cc" />
     <ClCompile Include="src\sdl2.cc" />
     <ClCompile Include="src\settings.cc" />
     <ClCompile Include="src\shader.cc" />
     <ClCompile Include="src\shaderProgram.cc" />
-    <ClCompile Include="src\typedefs.cc" />
+    <ClCompile Include="src\text_helpers.cc" />
     <ClCompile Include="src\vector_graphics_editor.cc" />
     <ClCompile Include="src\vector_img.cc" />
     <ClCompile Include="src\window.cc" />
@@ -163,6 +164,7 @@
     <ClInclude Include="src\gui_menu.hh" />
     <ClInclude Include="src\gui_popup_element.hh" />
     <ClInclude Include="src\gui_text.hh" />
+    <ClInclude Include="src\text_helpers.hh" />
     <ClInclude Include="src\vector_graphics_editor.hh" />
     <ClInclude Include="src\mesh.hh" />
     <ClInclude Include="src\sdl2.hh" />

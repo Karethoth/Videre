@@ -1,10 +1,12 @@
 #include "vector_graphics_editor.hh"
 #include "gui.hh"
-#include "gui_layouts.hh"
+#include "gui_text.hh"
 #include "gui_menu.hh"
 #include "gui_button.hh"
+#include "gui_layouts.hh"
 #include "gl_helpers.hh"
 #include "globals.hh"
+#include "text_helpers.hh"
 
 #include <memory>
 #include <iostream>
@@ -159,6 +161,10 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 		popup_menu->deleted = true;
 	};
+	
+	auto button1_label = make_shared<GuiLabel>();
+	button1_label->content = u8_to_unicode( "Test" );
+	button1->add_child( button1_label );
 
 	menu->add_child( button1 );
 

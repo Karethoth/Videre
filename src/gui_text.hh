@@ -15,7 +15,12 @@ namespace gui
 		float scale = 1.f
 	);
 
-
+	// Get line overflow
+	string_unicode get_line_overflow(
+		string_unicode text,
+		float line_width,
+		std::string font = "default"
+	);
 
 	struct GuiLabel : GuiElement
 	{
