@@ -145,7 +145,7 @@ size_t gl::render_text_2d(
 		gui::any_gl_errors();
 	}
 
-	auto projection = glm::ortho<float>( 0, window_size.x, 0, window_size.y );
+	const auto projection = glm::ortho<float>( 0, window_size.x, 0, window_size.y );
 	const auto tex_uniform = shader.get_uniform( "tex" );
 	const auto mp_uniform = shader.get_uniform( "MP" );
 	const auto color_uniform = shader.get_uniform( "color" );
@@ -158,7 +158,6 @@ size_t gl::render_text_2d(
 	gui::any_gl_errors();
 
 	float caret_pos_x = pos.x;
-	size_t offset = 0;
 
 	glBindVertexArray( vao );
 	glBindBuffer( GL_ARRAY_BUFFER, vbo );
@@ -167,15 +166,13 @@ size_t gl::render_text_2d(
 	glActiveTexture( GL_TEXTURE0 );
 	gui::any_gl_errors();
 
-	const auto& font_face_contents = font_face_library[{ face }];
+	const auto& font_face_contents = Globals::font_face_library[{ face }];
 
 	GlCharacter previous_character{};
 
 	const auto unicode_str = u8_to_unicode( text );
 	for( const auto code_point : unicode_str )
 	{
-		const float caret_pos_x = pos.x + offset;
-
 		// Find or create the character
 		GlCharacter c;
 		auto it = font_face_contents.find( code_point );
@@ -232,7 +229,7 @@ size_t gl::render_text_2d(
 		glDrawArrays( GL_TRIANGLES, 0, 6 );
 		
 		// Bitshift by 6 to get pixels
-		offset += static_cast<int>((c.advance >> 6) * scale.x) + kerning.x;
+		caret_pos_x += static_cast<int>((c.advance >> 6) * scale.x) + kerning.x;
 		previous_character = c;
 	}
 
@@ -240,6 +237,6 @@ size_t gl::render_text_2d(
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	glBindVertexArray( 0 );
 
-	return offset;
+	return caret_pos_x - pos.x;
 }
 

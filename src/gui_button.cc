@@ -1,10 +1,13 @@
 #include "gui_button.hh"
+#include <algorithm>
 using namespace std;
 using namespace gui;
 
 
 void GuiButton::handle_event( const GuiEvent &e )
 {
+	GuiVec2 min_size;
+
 	switch( e.type )
 	{
 		case MOUSE_BUTTON:
@@ -26,6 +29,21 @@ void GuiButton::handle_event( const GuiEvent &e )
 				event.mouse_button.pos = e.mouse_drag_end.pos_end;
 				event.mouse_button.button = e.mouse_drag_end.button;
 				handle_event( event );
+			}
+			break;
+
+		case RESIZE:
+			min_size = get_minimum_size();
+			size.w = max(min_size.w, e.resize.size.w);
+			size.h = max(min_size.h, e.resize.size.h);
+			return;
+			break;
+
+		case MOUSE_ENTER:
+		case MOUSE_LEAVE:
+			for( auto child : children )
+			{
+				child->handle_event( e );
 			}
 			break;
 	}

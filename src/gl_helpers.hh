@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include "shaderProgram.hh"
 #include "gui.hh"
-#include "typedefs.hh"
+#include "common_types.hh"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

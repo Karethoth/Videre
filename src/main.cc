@@ -48,7 +48,8 @@ mutex Globals::windows_mutex{};
 vector<gui::Window> Globals::windows{};
 map<string, ShaderProgram> Globals::shaders{};
 FT_Library Globals::freetype;
-map<string, FT_Face> Globals::freetype_faces;
+map<string, FT_Face> Globals::freetype_faces{};
+map<FontFaceIdentity, FontFaceContents> Globals::font_face_library{};
 
 
 void handle_sdl_event( const SDL_Event &e )

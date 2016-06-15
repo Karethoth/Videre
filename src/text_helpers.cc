@@ -1,5 +1,7 @@
 #include "text_helpers.hh"
+#include "globals.hh"
 #include "gui_gl.hh"
+
 #include <iostream>
 
 
@@ -114,9 +116,10 @@ string_unicode u8_to_unicode( const string_u8 &str )
 GlCharacter add_character( FT_Face face, unsigned long c )
 {
 	auto glyph_index = FT_Get_Char_Index( face, c );
-	if( FT_Load_Char( face, c, FT_LOAD_RENDER ) )
+	auto err = FT_Load_Char( face, c, FT_LOAD_RENDER );
+	if( err )
 	{
-		std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+		std::wcout << "ERROR::FREETYTPE: Failed to load Glyph(" << err << ")" << std::endl;
 		return {};
 	}
 
@@ -156,7 +159,7 @@ GlCharacter add_character( FT_Face face, unsigned long c )
 		glyph_index
 	};
 
-	font_face_library[FontFaceIdentity( face )].insert( { c, character } );
+	Globals::font_face_library[FontFaceIdentity( face )].insert( { c, character } );
 	return character;
 }
 

@@ -2,6 +2,7 @@
 #include "gui_menu.hh"
 #include "gl_helpers.hh"
 #include "globals.hh"
+#include <algorithm>
 
 using namespace std;
 using namespace gui;
@@ -23,7 +24,9 @@ void Menu::handle_event( const GuiEvent &e )
 	}
 	else if( e.type == RESIZE )
 	{
-		size = e.resize.size;
+		const auto min_size = get_minimum_size();
+		size.w = max( min_size.w, e.resize.size.w );
+		size.y = max( min_size.h, e.resize.size.h );
 		fit_children();
 	}
 	else
@@ -74,16 +77,21 @@ void Menu::fit_children()
 GuiVec2 Menu::get_minimum_size() const
 {
 	// Fit the menu to the children for now
-	// TODO: Add a way to set the maximum height for menu, scrollable when more content than room
+	// TODO: Add a way to set the maximum height for menu, and
+	//       make it scrollable when there's more content than room
 
 	int minimum_height = 0;
+	int minimum_width = size.w;
 	for( const auto& child : children )
 	{
-		minimum_height += child->size.h;
+		auto child_minimum_size = child->get_minimum_size();
+		minimum_height += max( child->size.h, child_minimum_size.h );
+		minimum_width = max( minimum_width, child_minimum_size.w );
 	}
 
-	return{ size.w, minimum_height };
+	return{ minimum_width, minimum_height };
 }
+
 
 
 void MenuSpacer::handle_event( const GuiEvent &e )

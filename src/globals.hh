@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common_types.hh"
 #include "window.hh"
 #include "shaderProgram.hh"
 
@@ -23,5 +24,6 @@ struct Globals
 
 	static FT_Library freetype;
 	static std::map<std::string, FT_Face> freetype_faces;
+	static std::map<FontFaceIdentity, FontFaceContents> font_face_library;
 };
 

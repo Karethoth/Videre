@@ -142,7 +142,6 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 	// Add some test buttons
 	auto button1 = make_shared<GuiButton>();
-	button1->size = { 0, 25 };
 	button1->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
 	button1->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
 	button1->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
@@ -162,8 +161,11 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 		popup_menu->deleted = true;
 	};
 	
-	auto button1_label = make_shared<GuiLabel>();
-	button1_label->content = u8_to_unicode( "Test" );
+	auto button1_label = make_shared<GuiLabel>(u8_to_unicode("Test"),18);
+	button1_label->style.normal.color_text = glm::vec4{ 0.9f };
+	button1_label->style.hover.color_text  = glm::vec4{ 1.0f };
+	button1_label->style.normal.padding = glm::vec4{ 4.f };
+	button1_label->style.hover.padding = glm::vec4{ 4.f };
 	button1->add_child( button1_label );
 
 	menu->add_child( button1 );
@@ -177,7 +179,6 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 	// Add another button
 	auto button2 = make_shared<GuiButton>();
-	button2->size = { 0, 25 };
 	button2->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
 	button2->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
 	button2->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
@@ -198,6 +199,14 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 		popup_menu->deleted = true;
 	};
+	
+	auto button2_label = make_shared<GuiLabel>( u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0\xE7\xA7\x81xasdasd" ), 18 );
+	button2_label->style.normal.color_text = glm::vec4{ 0.9f };
+	button2_label->style.hover.color_text  = glm::vec4{ 1.0f };
+	button2_label->style.normal.padding = glm::vec4{ 4.f };
+	button2_label->style.hover.padding = glm::vec4{ 4.f };
+	button2->add_child( button2_label );
+
 	menu->add_child( button2 );
 
 	popup_menu->add_child( menu );
@@ -310,3 +319,4 @@ void VectorGraphicsCanvas::render_vector_img() const
 
 	gl::render_quad_2d(shader->second, get_root()->size.to_gl_vec(), img_area_pos, img_area_size);
 }
+
