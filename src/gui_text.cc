@@ -73,17 +73,15 @@ void gui::render_unicode(
 	for( auto c : text )
 	{
 		GlCharacter current_character;
-		auto it = font_face_contents.find( c );
-		if( it != font_face_contents.end() )
+		if( font_face_character_exists( c ) )
 		{
-			current_character = it->second;
+			current_character = get_font_face_character( face, c );
 		}
 		else
 		{
 			current_character = add_font_face_character( face, c );
+			any_gl_errors();
 		}
-
-		any_gl_errors();
 
 		// Get kerning
 		FT_Vector kerning{0,0};
@@ -159,14 +157,13 @@ float gui::get_line_width(
 	for( auto c : text )
 	{
 		GlCharacter current_character;
-		auto it = font_face_contents.find( c );
-		if( it != font_face_contents.end() )
+		if( font_face_character_exists( c ) )
 		{
-			current_character = it->second;
+			current_character = get_font_face_character( face, c );
 		}
 		else
 		{
-			current_character = get_font_face_character( face, c );
+			current_character = tmp_font_face_character( face, c );
 		}
 
 		// Get kerning

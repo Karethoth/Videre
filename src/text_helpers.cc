@@ -186,6 +186,34 @@ GlCharacter add_font_face_character( FT_Face face, unsigned long c )
 
 GlCharacter get_font_face_character( FT_Face face, unsigned long c )
 {
+	// Try with the given font face
+	auto& const font_face_contents = Globals::font_face_library[{face}];
+	auto character_info = font_face_contents.find( c );
+
+	if( character_info != font_face_contents.end() )
+	{
+		return character_info->second;
+	}
+
+	// If the given font face didn't have it, loop over all of the font faces
+	for( auto &font_face : Globals::freetype_face_order )
+	{
+		font_face_contents = Globals::font_face_library[{font_face.second}];
+
+		const auto character_info = font_face_contents.find( c );
+		if( character_info != font_face_contents.end() )
+		{
+			return character_info->second;
+		}
+	}
+
+	return { 0 };
+}
+
+
+
+GlCharacter tmp_font_face_character( FT_Face face, unsigned long c )
+{
 	auto glyph_index = FT_Get_Char_Index( face, c );
 
 	// If the glyph wasn't found, try to use the next font face
@@ -194,7 +222,7 @@ GlCharacter get_font_face_character( FT_Face face, unsigned long c )
 		const auto next_face = get_next_font_face( face );
 		if( next_face )
 		{
-			return get_font_face_character( next_face, c );
+			return tmp_font_face_character( next_face, c );
 		}
 
 		// This was the last face and no glyph was found,
@@ -204,7 +232,6 @@ GlCharacter get_font_face_character( FT_Face face, unsigned long c )
 	auto err = FT_Load_Char( face, c, FT_LOAD_DEFAULT );
 	if( err )
 	{
-		wcout << "ERR: " << err << "\n";
 		throw runtime_error( "FT_Load_Char failed for code point " + to_string( c ) );
 	}
 
@@ -215,6 +242,24 @@ GlCharacter get_font_face_character( FT_Face face, unsigned long c )
 		(GLuint)face->glyph->advance.x,
 		glyph_index
 	};
+}
+
+
+
+bool font_face_character_exists( unsigned long c )
+{
+	// If the given font face didn't have it, loop over all of the font faces
+	for( auto &font_face : Globals::freetype_face_order )
+	{
+		const auto& font_face_contents = Globals::font_face_library[{font_face.second}];
+		const auto character_info = font_face_contents.find( c );
+		if( character_info != font_face_contents.end() )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 
@@ -253,6 +298,7 @@ FT_Face get_default_font_face()
 
 	return font->second;
 }
+
 
 
 void sync_font_face_sizes( size_t font_size )
