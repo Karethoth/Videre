@@ -21,6 +21,7 @@ using string_u8      = std::string;
 using string_unicode = std::vector<uint32_t>;
 
 
+
 // struct to hold GL-texture and common info of an unicode code point
 struct GlCharacter
 {
@@ -30,6 +31,7 @@ struct GlCharacter
 	GLuint advance;
 	FT_UInt glyph;
 };
+
 
 
 struct FontFaceIdentity

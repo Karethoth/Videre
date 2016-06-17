@@ -19,6 +19,7 @@ struct VectorGraphicsCanvas : gui::GuiElement
   protected:
 	void render_vector_img() const;
 	void create_context_menu( gui::GuiVec2 tgt_pos );
+	glm::vec4 get_canvas_area() const;
 };
 
 

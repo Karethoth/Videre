@@ -85,6 +85,9 @@ struct SplitLayout : GuiElement
 	void fit_children();
 
 	virtual void init_child( GuiElement *child ) override;
+
+	// Adding children from outside doesn't make sense
+	using GuiElement::add_child;
 };
 
 } // namespace gui

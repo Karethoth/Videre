@@ -50,6 +50,8 @@ void Menu::fit_children()
 {
 	auto child_position_y = pos.y;
 
+	const auto min_size = get_minimum_size();
+
 	for( auto &child : children )
 	{
 		// TODO: Check if child fits in to the available space
@@ -63,12 +65,12 @@ void Menu::fit_children()
 
 		// Here we're assuming that the child has it's height set correctly
 		// and that we only have to worry about the width of it
-		const auto child_current_size = child->size;
+		const auto child_min_size = child->get_minimum_size();
 		event.type = RESIZE;
-		event.resize.size = { size.w, child_current_size.h };
+		event.resize.size = { min_size.w, child_min_size.h };
 		child->handle_event( event );
 
-		child_position_y += child_current_size.h;
+		child_position_y += child_min_size.h;
 	}
 }
 

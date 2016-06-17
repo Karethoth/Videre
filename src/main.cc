@@ -301,34 +301,38 @@ int main( int argc, char **argv )
 		return 1;
 	}
 
-	// Call SDL_Quit at the end
 	auto defer_sdl_quit = tools::make_defer( [](){
 		SDL_Quit();
 	} );
 
-	// Clear windows automatically at the end,
-	// while the SDL context is still okay
 	auto defer_close_windows = tools::make_defer( []()
 	{
 		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
 		Globals::windows.clear();
 	} );
 
-	// If on windows and not in debug mode, detach the console
 	#ifdef  _WIN32
 	#ifndef _DEBUG
 	FreeConsole();
 	#endif
 	#endif
 
-	auto vector_graphics_editor = make_shared<VectorGraphicsEditor>();
-	Globals::windows[0].add_child( vector_graphics_editor );
+	auto split_layout = make_shared<gui::SplitLayout>();
+	split_layout->create_children = [] {
+		return gui::GuiElementPtrPair(
+			make_shared<VectorGraphicsEditor>(),
+			make_shared<gui::SplitLayout>()
+		);
+	};
 
-	auto glElement = make_shared<gui::GlElement>( Globals::windows[0].window.get() );
+	Globals::windows[0].add_child( split_layout );
+	split_layout->split_at( gui::SplitAxis::VERTICAL, Globals::windows[0].size.w / 2 );
+	split_layout->split_bar.is_locked = false;
 
-	Globals::windows[0].add_child( glElement );
+	auto casted_split_layout = static_pointer_cast<gui::GuiElement>(split_layout);
+	casted_split_layout->add_child( make_shared<VectorGraphicsEditor>() );
 
-	/* Start main loop */
+	/* Main loop */
 	SDL_Event event;
 
 	auto next_frame = chrono::system_clock::now();
@@ -339,6 +343,7 @@ int main( int argc, char **argv )
 	auto fps_start_time = chrono::system_clock::now();
 	auto fps_frames_left = fps_step_count;
 	float fps = 1.f;
+
 	while( !Globals::should_quit )
 	{
 		if( fps > fps_cap )

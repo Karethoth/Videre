@@ -11,7 +11,12 @@
 
 using namespace std;
 
-void gl::render_line_2d( const ShaderProgram &shader, const glm::vec2 &window_size, glm::vec2 a, glm::vec2 b )
+void gl::render_line_2d(
+	const ShaderProgram &shader,
+	const glm::vec2 &window_size,
+	glm::vec2 a,
+	glm::vec2 b
+)
 {
 	static const GLfloat line_vertex_data[] = {
 		0.0f, 0.0f, 0.0f,
@@ -31,7 +36,7 @@ void gl::render_line_2d( const ShaderProgram &shader, const glm::vec2 &window_si
 
 	auto diff = b - a;
 
-	glm::mat4 model = glm::ortho<float>(0, window_size.x, 0, window_size.y);
+	glm::mat4 model = glm::ortho<float>( 0, window_size.x, window_size.y, 0 );
 	model = glm::translate( model, glm::vec3( a, 0.0f ) );
 
 	// Horizontal line

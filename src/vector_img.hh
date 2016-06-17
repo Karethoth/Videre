@@ -51,15 +51,14 @@ struct ImgLayer
 
 struct ImgItem
 {
+	ImgItemType type;
+
 	float x;
 	float y;
 
 	Color color;
 
 	ImgItem();
-
-  protected:
-	ImgItemType type;
 };
 
 

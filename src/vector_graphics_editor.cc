@@ -50,6 +50,7 @@ VectorGraphicsEditor::VectorGraphicsEditor()
 }
 
 
+
 VectorGraphicsEditor::~VectorGraphicsEditor()
 {
 }
@@ -140,7 +141,10 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 	auto menu = make_shared<Menu>();
 
-	// Add some test buttons
+	// Create a test button
+	const auto button_font_size = 14;
+	const auto label_padding = glm::vec4( 6.f, 4.f, 8.f, 8.f );
+
 	auto button1 = make_shared<GuiButton>();
 	button1->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
 	button1->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
@@ -153,19 +157,21 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 			return;
 		}
 
+		const auto canvas_area = get_canvas_area();
+
 		auto item = unique_ptr<vector_img::ImgControlPoint>( new vector_img::ImgControlPoint() );
-		item->x = static_cast<float>( popup_menu->target_pos.x - this->pos.x);
-		item->y = static_cast<float>( popup_menu->target_pos.y - this->pos.y );
+		item->x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x);
+		item->y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
 		image.layers[0]->items.push_back( move( item ) );
 
 		popup_menu->deleted = true;
 	};
 	
-	auto button1_label = make_shared<GuiLabel>(u8_to_unicode("Test"),18);
+	auto button1_label = make_shared<GuiLabel>( u8_to_unicode("Test"), button_font_size );
 	button1_label->style.normal.color_text = glm::vec4{ 0.9f };
 	button1_label->style.hover.color_text  = glm::vec4{ 1.0f };
-	button1_label->style.normal.padding = glm::vec4{ 4.f };
-	button1_label->style.hover.padding = glm::vec4{ 4.f };
+	button1_label->style.normal.padding = label_padding;
+	button1_label->style.hover.padding  = label_padding;
 	button1->add_child( button1_label );
 
 	menu->add_child( button1 );
@@ -177,7 +183,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	spacer->size.h = 1;
 	menu->add_child( spacer );
 
-	// Add another button
+	// Add another test button
 	auto button2 = make_shared<GuiButton>();
 	button2->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
 	button2->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
@@ -190,21 +196,34 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 			return;
 		}
 
+		const auto canvas_area = get_canvas_area();
+
 		auto item = unique_ptr<vector_img::ImgLine>( new vector_img::ImgLine() );
-		item->a.x = static_cast<float>( popup_menu->target_pos.x - this->pos.x );
-		item->a.y = static_cast<float>( popup_menu->target_pos.y - this->pos.y );
-		item->b.x = static_cast<float>( popup_menu->target_pos.x - this->pos.x + 50 );
-		item->b.y = static_cast<float>( popup_menu->target_pos.y - this->pos.y );
+		item->a.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x - 2 );
+		item->a.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
+		item->b.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x + 50 );
+		item->b.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
 		image.layers[0]->items.push_back( move( item ) );
+
+		auto item2 = unique_ptr<vector_img::ImgLine>( new vector_img::ImgLine() );
+		item2->a.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x );
+		item2->a.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y - 2 );
+		item2->b.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x );
+		item2->b.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y + 50 );
+		image.layers[0]->items.push_back( move( item2 ) );
 
 		popup_menu->deleted = true;
 	};
 	
-	auto button2_label = make_shared<GuiLabel>( u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0\xE7\xA7\x81xasdasd" ), 18 );
+	auto button2_label = make_shared<GuiLabel>(
+		u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0\xE7\xA7\x81xasdasd" ),
+		button_font_size
+	);
+
 	button2_label->style.normal.color_text = glm::vec4{ 0.9f };
 	button2_label->style.hover.color_text  = glm::vec4{ 1.0f };
-	button2_label->style.normal.padding = glm::vec4{ 4.f };
-	button2_label->style.hover.padding = glm::vec4{ 4.f };
+	button2_label->style.normal.padding = label_padding;
+	button2_label->style.hover.padding  = label_padding;
 	button2->add_child( button2_label );
 
 	menu->add_child( button2 );
@@ -262,10 +281,51 @@ void VectorGraphicsCanvas::render() const
 
 
 
-void VectorGraphicsCanvas::render_vector_img() const
+void render_vector_img_item(
+	const VectorGraphicsCanvas &canvas,
+	const glm::vec4 &canvas_area,
+	const ShaderProgram &shader,
+	const vector_img::ImgItem *item
+)
 {
-	auto shader = Globals::shaders.find( "2d" );
+	using namespace vector_img;
 
+	glm::vec2 tmp_a;
+	glm::vec2 tmp_b;
+
+	ImgControlPoint const *control_point;
+	ImgLine const *line;
+
+	switch( item->type )
+	{
+		case CONTROL_POINT:
+			control_point = static_cast<const ImgControlPoint*>( item );
+			tmp_a = {
+				canvas_area.x + control_point->x - 2,
+				canvas_area.y + control_point->y - 2
+			};
+			tmp_b = { 5, 5 };
+			gl::render_quad_2d( shader, canvas.get_root()->size.to_gl_vec(), tmp_a, tmp_b );
+			break;
+
+		case LINE:
+			line = static_cast<const ImgLine*>( item );
+			tmp_a = glm::vec2{ line->a.x + canvas_area.x, canvas_area.y + line->a.y };
+			tmp_b = glm::vec2{ line->b.x + canvas_area.x, canvas_area.y + line->b.y };
+			gl::render_line_2d( shader, canvas.get_root()->size.to_gl_vec(), tmp_a, tmp_b );
+			break;
+
+		case FILL:
+			break;
+
+		default:
+			return;
+	}
+}
+
+
+glm::vec4 VectorGraphicsCanvas::get_canvas_area() const
+{
 	const glm::vec2 center = {
 		pos.x + size.w / 2.f + camera_offset.x,
 		pos.y + size.h / 2.f + camera_offset.y
@@ -282,7 +342,7 @@ void VectorGraphicsCanvas::render_vector_img() const
 		center.y - img_size.y / 2.f
 	};
 
-	// Visible area of the image
+	// Render the image background / area
 	glm::vec2 img_area_pos  = img_pos;
 	glm::vec2 img_area_size = img_size;
 
@@ -309,6 +369,20 @@ void VectorGraphicsCanvas::render_vector_img() const
 		img_area_size.y -= overflow_y * 2;
 	}
 
+	return glm::vec4 {
+		img_area_pos.x,
+		img_area_pos.y,
+		img_area_size.x,
+		img_area_size.y
+	};
+
+}
+
+
+void VectorGraphicsCanvas::render_vector_img() const
+{
+	auto shader = Globals::shaders.find( "2d" );
+
 	glUseProgram( shader->second.program );
 
 	const auto colorUniform = shader->second.get_uniform( "color" );
@@ -317,6 +391,30 @@ void VectorGraphicsCanvas::render_vector_img() const
 	const auto texturedUniform = shader->second.get_uniform( "textured" );
 	glUniform1i( texturedUniform, 0 );
 
+	const auto canvas_area   = get_canvas_area();
+	const auto img_area_pos  = glm::vec2{ canvas_area.x, canvas_area.y };
+	const auto img_area_size = glm::vec2{ canvas_area.z, canvas_area.w };
+
 	gl::render_quad_2d(shader->second, get_root()->size.to_gl_vec(), img_area_pos, img_area_size);
+
+	// Render the image
+	for( auto &layer : image.layers )
+	{
+		if( !layer )
+		{
+			continue;
+		}
+
+
+		for( auto &item : layer->items )
+		{
+			if( !item )
+			{
+				continue;
+			}
+
+			render_vector_img_item( *this, canvas_area, shader->second, item.get() );
+		}
+	}
 }
 

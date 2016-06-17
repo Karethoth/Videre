@@ -62,6 +62,8 @@ void GridLayout::render() const
 	}
 }
 
+
+
 void GridLayout::update_dimensions()
 {
 	used_width = 0;
@@ -109,6 +111,7 @@ void GridLayout::update_dimensions()
 	auto_width  = auto_width_count  ? (size.w - used_width)  / auto_width_count : 0;
 	auto_height = auto_height_count ? (size.h - used_height) / auto_height_count : 0;
 }
+
 
 
 void GridLayout::fit_children()
@@ -417,9 +420,14 @@ void SplitLayout::handle_event( const GuiEvent &e )
 			fit_children();
 		}
 	}
+	else if( e.type == MOUSE_DRAG_END )
+	{
+		split_bar.is_dragged = false;
+	}
 
 	GuiElement::handle_event( e );
 }
+
 
 
 void render_line( int x1, int y1, int x2, int y2 )
@@ -427,11 +435,12 @@ void render_line( int x1, int y1, int x2, int y2 )
 	auto windowSize = Globals::windows[0].size;
 	auto shader = Globals::shaders.find("2d");
 
-	glm::vec2 a = { x1, windowSize.h - y1 };
-	glm::vec2 b = { x2, windowSize.h - y2 };
+	glm::vec2 a = { x1, y1 };
+	glm::vec2 b = { x2, y2 };
 
 	gl::render_line_2d( shader->second, { windowSize.w, windowSize.h }, a, b );
 }
+
 
 
 void SplitLayout::render() const
@@ -559,14 +568,18 @@ void SplitLayout::split_layout()
 	get_root()->handle_event( event );
 }
 
+
+
 void SplitLayout::split_at( SplitAxis axis, int offset )
 {
-	split_axis = axis;
+	is_layout_splitted = true;
+
+	split_axis       = axis;
+	split_bar.axis   = axis;
 	split_bar.offset = offset;
-	split_bar.ratio = (split_axis == VERTICAL) ?
+	split_bar.ratio  = (split_axis == VERTICAL) ?
 		(float)split_bar.offset / size.w :
 		(float)split_bar.offset / size.h;
-	is_layout_splitted = true;
 	split_bar.is_locked = true;
 
 	auto children = create_children();
