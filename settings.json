@@ -1,6 +1,17 @@
 {
-	"window": {
-    "sizeX": 1024,
-		"sizeY": 512
-	}
+  "window": {
+    "width": 1480,
+    "height": 640
+  },
+
+  "fonts": [
+    {
+      "name": "M+",
+      "path": "data/fonts/mplus.ttf"
+    },
+    {
+      "name": "default",
+      "path": "data/fonts/default.ttf"
+    }
+  ]
 }

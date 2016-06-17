@@ -31,7 +31,8 @@ namespace gl
 		const string_u8 &text,
 		glm::vec2 pos,
 		glm::vec2 scale,
-		FT_Face face
+		FT_Face face,
+		size_t font_size
 	);
 
 	glm::vec2 get_text_bounding_box(

@@ -398,7 +398,6 @@ void SplitLayout::handle_event( const GuiEvent &e )
 		else if( split_bar.is_hilighted )
 		{
 			split_bar.is_dragged = true;
-			return;
 		}
 	}
 	else if( e.type == MOUSE_DRAG )

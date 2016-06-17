@@ -9,6 +9,7 @@
 using namespace std;
 using namespace gui;
 
+
 void gui::render_unicode(
 	const ShaderProgram &shader,
 	string_unicode text,
@@ -79,7 +80,7 @@ void gui::render_unicode(
 		}
 		else
 		{
-			current_character = add_character( face, c );
+			current_character = add_font_face_character( face, c );
 		}
 
 		any_gl_errors();
@@ -101,8 +102,9 @@ void gui::render_unicode(
 		}
 
 		// Render
-		const GLfloat pos_x = caret_pos_x * scale + kerning.x;
-		const GLfloat pos_y = position.y + kerning.y;
+		const auto y_adjust = current_character.size.y - current_character.bearing.y;
+		const GLfloat pos_x = static_cast<float>(caret_pos_x * scale + kerning.x);
+		const GLfloat pos_y = static_cast<float>(position.y + kerning.y - y_adjust);
 		const GLfloat w = current_character.size.x * scale;
 		const GLfloat h = current_character.size.y * scale;
 
@@ -163,20 +165,7 @@ float gui::get_line_width(
 		}
 		else
 		{
-			auto glyph_index = FT_Get_Char_Index( face, c );
-			auto err = FT_Load_Char( face, c, FT_LOAD_DEFAULT );
-			if( err )
-			{
-				throw runtime_error( "FT_Load_Char failed for code point " + to_string( c ) );
-			}
-
-			current_character = {
-				0,
-				glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
-				glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
-				(GLuint)face->glyph->advance.x,
-				glyph_index
-			};
+			current_character = get_font_face_character( face, c );
 		}
 
 		// Get kerning
@@ -192,7 +181,6 @@ float gui::get_line_width(
 				&kerning
 			);
 			kerning.x >>= 6;
-			kerning.y >>= 6;
 		}
 
 		width += kerning.x + (current_character.advance >> 6);
@@ -231,7 +219,7 @@ void GuiLabel::render() const
 		throw runtime_error( "No shader found" );
 	}
 
-	auto font = Globals::freetype_faces.find( "default" );
+	auto font = Globals::freetype_faces.find( "M+" );
 	if( font == Globals::freetype_faces.end() )
 	{
 		throw runtime_error( "No default font found" );
@@ -243,11 +231,11 @@ void GuiLabel::render() const
 	const auto color = style.get( style_state ).color_text;
 	const auto padding = style.get( style_state ).padding;
 
-	FT_Set_Pixel_Sizes( font->second, 0, font_size );
+	sync_font_face_sizes( font_size );
+
 	auto cursor_pos = GuiVec2(
-		pos.x + padding.x,
-		//window->size.h - pos.y - size.h+ padding.w
-		window->size.h - pos.y - padding.y - font_size
+		static_cast<int>(pos.x + padding.x),
+		static_cast<int>(window->size.h - pos.y - padding.y - font_size)
 	);
 	render_unicode( shader->second, content, cursor_pos, *window, font->second, color );
 }
@@ -272,18 +260,13 @@ void GuiLabel::handle_event( const GuiEvent &e )
 GuiVec2 GuiLabel::get_minimum_size() const
 {
 	const auto padding = style.get( style_state ).padding;
+	const auto font_face = get_default_font_face();
 
-	auto font = Globals::freetype_faces.find( "default" );
-	if( font == Globals::freetype_faces.end() )
-	{
-		throw runtime_error( "No default font found" );
-	}
-
-	FT_Set_Pixel_Sizes( font->second, 0, font_size );
+	sync_font_face_sizes( font_size );
 
 	const auto min_size = GuiVec2(
-		get_line_width( content, font->second ) + padding.x + padding.z,
-		font_size + padding.y + padding.w
+		static_cast<int>(get_line_width( content, font_face ) + padding.x + padding.z),
+		static_cast<int>(font_size + padding.y + padding.w)
 	);
 
 	return min_size;
@@ -293,32 +276,28 @@ GuiVec2 GuiLabel::get_minimum_size() const
 
 void GuiTextArea::render() const
 {
-	auto window = static_cast<Window*>( get_root() );
+	const auto font_face = get_default_font_face();
+	const auto padding = style.get( style_state ).padding;
+	const auto cursor_pos = GuiVec2(
+		static_cast<int>(pos.x + padding.x),
+		static_cast<int>(pos.y + padding.w * 2)
+	);
+
+	const auto window = static_cast<Window*>( get_root() );
 	if( !window )
 	{
 		throw runtime_error( "No window found" );
 		return;
 	}
 
-	auto shader = Globals::shaders.find( "2d" );
+	const auto shader = Globals::shaders.find( "2d" );
 	if( shader == Globals::shaders.end() )
 	{
 		throw runtime_error( "No shader found" );
 		return;
 	}
 
-	auto font = Globals::freetype_faces.find( "default" );
-	if( font == Globals::freetype_faces.end() )
-	{
-		throw runtime_error( "No default font found" );
-		return;
-	}
-
-	auto padding = style.get( style_state ).padding;
-
-	auto cursor_pos = GuiVec2( pos.x + padding.x, pos.y + padding.w * 2 );
-
-	render_unicode( shader->second, content, cursor_pos, *window, font->second );
+	render_unicode( shader->second, content, cursor_pos, *window, font_face );
 }
 
 

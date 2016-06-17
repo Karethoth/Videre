@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+using namespace std;
 
 namespace
 {
@@ -59,7 +60,11 @@ namespace
 
 
 
-	string_unicode::value_type read_next_unicode_code_point( const char *str, const char * const end, size_t &bytes )
+	string_unicode::value_type read_next_unicode_code_point(
+		const char *str,
+		const char * const end,
+		size_t &bytes
+	)
 	{
 		unsigned long character = 0;
 
@@ -113,9 +118,23 @@ string_unicode u8_to_unicode( const string_u8 &str )
 
 
 
-GlCharacter add_character( FT_Face face, unsigned long c )
+GlCharacter add_font_face_character( FT_Face face, unsigned long c )
 {
 	auto glyph_index = FT_Get_Char_Index( face, c );
+
+	// If the glyph wasn't found, try to use the next font face
+	if( !glyph_index )
+	{
+		const auto next_face = get_next_font_face( face );
+		if( next_face )
+		{
+			return add_font_face_character( next_face, c );
+		}
+		
+		// This was the last face and no glyph was found,
+		// continue and render the placeholder glyph
+	}
+
 	auto err = FT_Load_Char( face, c, FT_LOAD_RENDER );
 	if( err )
 	{
@@ -161,5 +180,86 @@ GlCharacter add_character( FT_Face face, unsigned long c )
 
 	Globals::font_face_library[FontFaceIdentity( face )].insert( { c, character } );
 	return character;
+}
+
+
+
+GlCharacter get_font_face_character( FT_Face face, unsigned long c )
+{
+	auto glyph_index = FT_Get_Char_Index( face, c );
+
+	// If the glyph wasn't found, try to use the next font face
+	if( !glyph_index )
+	{
+		const auto next_face = get_next_font_face( face );
+		if( next_face )
+		{
+			return get_font_face_character( next_face, c );
+		}
+
+		// This was the last face and no glyph was found,
+		// continue and render the placeholder glyph
+	}
+
+	auto err = FT_Load_Char( face, c, FT_LOAD_DEFAULT );
+	if( err )
+	{
+		wcout << "ERR: " << err << "\n";
+		throw runtime_error( "FT_Load_Char failed for code point " + to_string( c ) );
+	}
+
+	return {
+		0,
+		glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
+		glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
+		(GLuint)face->glyph->advance.x,
+		glyph_index
+	};
+}
+
+
+
+FT_Face get_next_font_face( FT_Face face )
+{
+	auto current = Globals::freetype_face_order.begin();
+	while( current != Globals::freetype_face_order.end() )
+	{
+		if( current->second == face )
+		{
+			break;
+		}
+		else current++;
+	}
+
+	if( current     == Globals::freetype_face_order.end() ||
+		current + 1 == Globals::freetype_face_order.end() )
+	{
+		return 0;
+	}
+
+	const auto next = current + 1;
+	return next->second;
+}
+
+
+
+FT_Face get_default_font_face()
+{
+	auto font = Globals::freetype_face_order.begin();
+	if( font == Globals::freetype_face_order.end() )
+	{
+		throw runtime_error( "No fonts to choose the default font from!" );
+	}
+
+	return font->second;
+}
+
+
+void sync_font_face_sizes( size_t font_size )
+{
+	for( auto font : Globals::freetype_face_order )
+	{
+		FT_Set_Pixel_Sizes( font.second, 0, font_size );
+	}
 }
 

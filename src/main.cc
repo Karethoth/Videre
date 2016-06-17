@@ -6,6 +6,7 @@
 #include "gui_layouts.hh"
 #include "gui_gl.hh"
 #include "gl_helpers.hh"
+#include "text_helpers.hh"
 #include "shaderProgram.hh"
 #include "vector_graphics_editor.hh"
 
@@ -48,47 +49,55 @@ mutex Globals::windows_mutex{};
 vector<gui::Window> Globals::windows{};
 map<string, ShaderProgram> Globals::shaders{};
 FT_Library Globals::freetype;
-map<string, FT_Face> Globals::freetype_faces{};
+map<string_u8, FT_Face> Globals::freetype_faces{};
+vector<pair<string_u8, FT_Face>> Globals::freetype_face_order{};
 map<FontFaceIdentity, FontFaceContents> Globals::font_face_library{};
 
 
 void handle_sdl_event( const SDL_Event &e )
 {
 
-	if( e.type == SDL_QUIT )
+	try
 	{
-		Globals::should_quit = true;
-	}
-
-	else if( e.type == SDL_KEYDOWN )
-	{
-		if( e.key.keysym.sym == SDLK_ESCAPE )
+		if( e.type == SDL_QUIT )
 		{
 			Globals::should_quit = true;
 		}
-	}
-	else
-	{
-		auto window_id = sdl2::event_window_id( e );
 
-		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
-		for( auto& window : Globals::windows )
+		else if( e.type == SDL_KEYDOWN )
 		{
-			if( window.sdl_id == window_id || !window_id )
+			if( e.key.keysym.sym == SDLK_ESCAPE )
 			{
-				window.handle_sdl_event( e );
-				if( window_id )
-				{
-					return;
-				}
+				Globals::should_quit = true;
 			}
 		}
-
-		if( window_id )
+		else
 		{
-			cerr << "Unhandled SDL_Event, target window "
-			     << window_id << " not found" << endl;
+			auto window_id = sdl2::event_window_id( e );
+
+			lock_guard<mutex> windows_lock{ Globals::windows_mutex };
+			for( auto& window : Globals::windows )
+			{
+				if( window.sdl_id == window_id || !window_id )
+				{
+					window.handle_sdl_event( e );
+					if( window_id )
+					{
+						return;
+					}
+				}
+			}
+
+			if( window_id )
+			{
+				cerr << "Unhandled SDL_Event, target window "
+					<< window_id << " not found" << endl;
+			}
 		}
+	}
+	catch( runtime_error &e )
+	{
+		wcout << "Exception: " << e.what() << "\n";
 	}
 }
 
@@ -122,6 +131,14 @@ void init_graphics()
 	SDL_SetWindowPosition( Globals::windows[0].window.get(), 50, 50 );
 
 	auto& first_window = Globals::windows[0];
+
+	// Use window size from the settings
+	const auto window_width  = settings::core["window"]["width"].get<int>();
+	const auto window_height = settings::core["window"]["height"].get<int>();
+	if( window_width && window_height )
+	{
+		SDL_SetWindowSize( first_window.window.get(), window_width, window_height );
+	}
 
 	// Create SDL GL Context
 	first_window.gl_context = SDL_GL_CreateContext( first_window.window.get() );
@@ -176,6 +193,7 @@ void init_graphics()
 }
 
 
+
 void init_freetype()
 {
 	if( FT_Init_FreeType( &Globals::freetype ) )
@@ -183,31 +201,58 @@ void init_freetype()
 		throw runtime_error( "FT_Init_FreeType failed" );
 	}
 
-	vector<std::pair<string,string>> font_list;
-	font_list.push_back( { "default", "data/fonts/default.ttf" } );
+	vector<std::pair<string_u8, string_u8>> font_list;
+
+	{
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+		const auto fonts = settings::core["fonts"];
+		for( auto &font : fonts )
+		{
+			font_list.push_back( { font["name"].get<string_u8>(), font["path"].get<string_u8>() } );
+		}
+	}
 
 	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
 
 	FT_Face tmp_face;
 	for( const auto &font : font_list )
 	{
-		if( FT_New_Face( Globals::freetype, font.second.c_str(), 0, &tmp_face ) )
+		try
 		{
-			throw runtime_error( string{ "Couldn't load font file \"" } + font.second + "\"" );
+			FT_New_Face( Globals::freetype, font.second.c_str(), 0, &tmp_face );
+			Globals::freetype_face_order.push_back( { font.first, tmp_face } );
+			Globals::freetype_faces.insert( { font.first, tmp_face } );
 		}
-
-		Globals::freetype_faces.insert( { font.first, tmp_face } );
+		catch( ... )
+		{
+			wcout << "Failed to load font(" << font.first.c_str()
+			      << ") from " << font.second.c_str() << "\n";
+		}
 	}
+
+	if( !Globals::freetype_faces.size() )
+	{
+		wcout << "Warning: No fonts loaded. Expect the unexpected behaviour on their part.\n";
+	}
+
+	// Set the initial font size for all font faces
+	sync_font_face_sizes( 16 );
 }
 
 
 
 void render_windows()
 {
-	lock_guard<mutex> windows_lock{ Globals::windows_mutex };
-	for( auto& window : Globals::windows )
+	try {
+		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
+		for( auto& window : Globals::windows )
+		{
+			window.render();
+		}
+	}
+	catch( runtime_error &e )
 	{
-		window.render();
+		wcout << "Exception: " << e.what() << "\n";
 	}
 }
 
@@ -215,17 +260,23 @@ void render_windows()
 
 void update_windows()
 {
-	lock_guard<mutex> windows_lock{ Globals::windows_mutex };
-	for( auto it = Globals::windows.begin();
-	it != Globals::windows.end(); )
-	{
-		if( (*it).closed )
+	try {
+		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
+		for( auto it = Globals::windows.begin();
+		it != Globals::windows.end(); )
 		{
-			it = Globals::windows.erase( it );
-			continue;
-		}
+			if( (*it).closed )
+			{
+				it = Globals::windows.erase( it );
+				continue;
+			}
 
-		++it;
+			++it;
+		}
+	}
+	catch( runtime_error &e )
+	{
+		wcout << "Exception: " << e.what() << "\n";
 	}
 }
 
@@ -251,7 +302,7 @@ int main( int argc, char **argv )
 
 	function<void(void)> update_settings = [&]
 	{
-		wcout << "Updating settings..." << endl;
+		wcout << "Updating settings...\n";
 
 		lock_guard<mutex> settings_lock( settings::settings_mutex );
 
@@ -259,9 +310,11 @@ int main( int argc, char **argv )
 		{
 			auto data = tools::read_file_contents( "settings.json" );
 			auto bytes = converter.to_bytes( data );
-			auto settings = nlohmann::json::parse( bytes );
-			wcout << "WINDOW X: " << settings["window"]["sizeX"].get<int>() << endl;
-			wcout << "WINDOW Y: " << settings["window"]["sizeY"].get<int>() << endl;
+			settings::core = nlohmann::json::parse( bytes );
+			wcout << "WINDOW X: " << settings::core["window"]["width"].get<int>() << endl;
+			wcout << "WINDOW Y: " << settings::core["window"]["height"].get<int>() << endl;
+
+			// TODO: Reload fonts
 		}
 		catch( runtime_error &e )
 		{
@@ -328,9 +381,6 @@ int main( int argc, char **argv )
 	Globals::windows[0].add_child( split_layout );
 	split_layout->split_at( gui::SplitAxis::VERTICAL, Globals::windows[0].size.w / 2 );
 	split_layout->split_bar.is_locked = false;
-
-	auto casted_split_layout = static_pointer_cast<gui::GuiElement>(split_layout);
-	casted_split_layout->add_child( make_shared<VectorGraphicsEditor>() );
 
 	/* Main loop */
 	SDL_Event event;

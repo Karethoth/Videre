@@ -48,7 +48,7 @@ namespace gui
 	struct GuiTextArea : GuiElement
 	{
 		string_unicode content;
-		size_t font_height;
+		size_t font_size;
 
 		virtual void render() const override;
 		virtual void handle_event( const GuiEvent &e ) override;

@@ -125,7 +125,8 @@ size_t gl::render_text_2d(
 	const string_u8 &text,
 	glm::vec2 pos,
 	glm::vec2 scale,
-	FT_Face face )
+	FT_Face face,
+	size_t font_size )
 {
 	static GLuint vao;
 	static GLuint vbo;
@@ -187,7 +188,7 @@ size_t gl::render_text_2d(
 		}
 		else
 		{
-			c = add_character( face, code_point );
+			c = add_font_face_character( face, code_point );
 		}
 		gui::any_gl_errors();
 

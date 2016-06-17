@@ -87,6 +87,10 @@ VectorGraphicsCanvas::VectorGraphicsCanvas()
 
 void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 {
+	// TODO: Decide if context menu should or should not close
+	//       when mouse is used in an another element
+	const auto close_when_moused_elsewhere = true;
+
 	if( e.type == MOUSE_DRAG_END )
 	{
 		if( in_area( e.mouse_drag_end.pos_start ) &&
@@ -99,12 +103,21 @@ void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 			event.mouse_button.button = e.mouse_drag_end.button;
 			handle_event( event );
 		}
+		else if( close_when_moused_elsewhere )
+		{
+			auto window = dynamic_cast<Window*>(get_root());
+			if( window )
+			{
+				window->popup_elements.clear();
+			}
+		}
 	}
 	else if( e.type == MOUSE_BUTTON )
 	{
-		if( e.mouse_button.button != 3 ||
-			e.mouse_button.state != RELEASED ||
-			!in_area( e.mouse_button.pos ) )
+		const auto is_in_area = in_area( e.mouse_button.pos );
+		
+		if( (close_when_moused_elsewhere || is_in_area) &&
+		    (e.mouse_button.button != 3 || e.mouse_button.state != RELEASED) )
 		{
 			auto window = dynamic_cast<Window*>(get_root());
 			if( window )
@@ -114,8 +127,10 @@ void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 
 			return;
 		}
-
-		create_context_menu( e.mouse_button.pos );
+		else if( is_in_area )
+		{
+			create_context_menu( e.mouse_button.pos );
+		}
 	}
 	else
 	{
@@ -167,7 +182,10 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 		popup_menu->deleted = true;
 	};
 	
-	auto button1_label = make_shared<GuiLabel>( u8_to_unicode("Test"), button_font_size );
+	auto button1_label = make_shared<GuiLabel>(
+		u8_to_unicode( "\xE0\xB8\x88\xE0\xB8\x87\xE0\xB8\x9D\xE0\xB9\x88\xE0\xB8\xB2\xE0\xB8\x9F\xE0\xB8\xB1\xE0\xB8\x99\xE0\xB8\x9E\xE0\xB8\xB1\xE0\xB8\x92\xE0\xB8\x99\xE0\xB8\xB2\xE0\xB8\xA7\xE0\xB8\xB4\xE0\xB8\x8A\xE0\xB8\xB2\xE0\xB8\x81\xE0\xB8\xB2\xE0\xB8\xA3" ),
+		button_font_size
+	);
 	button1_label->style.normal.color_text = glm::vec4{ 0.9f };
 	button1_label->style.hover.color_text  = glm::vec4{ 1.0f };
 	button1_label->style.normal.padding = label_padding;
@@ -216,7 +234,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	};
 	
 	auto button2_label = make_shared<GuiLabel>(
-		u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0\xE7\xA7\x81xasdasd" ),
+		u8_to_unicode( "x\xEC\xA1\xB0\xEC\x84\xA0\xE7\xA7\x81 abcdefghijklmnopqrstuvwxyz" ),
 		button_font_size
 	);
 

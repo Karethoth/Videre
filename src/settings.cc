@@ -74,18 +74,24 @@ thread tools::run_when_file_updated(
 
 chrono::system_clock::time_point tools::file_modified( const std::string &path )
 {
-	HFILE handle = 0;
-	OFSTRUCT file_info;
+	HANDLE handle = CreateFile(
+		path.c_str(),
+		GENERIC_READ,
+		0,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
 
-	handle = OpenFile( path.c_str(), &file_info, OF_READ );
 	if( !handle )
 	{
 		throw runtime_error( "File doesn't exist" );
 	}
 
 	FILETIME write_time;
-	auto success = GetFileTime( (HANDLE)handle, NULL, NULL, &write_time );
-	_lclose( handle );
+	auto success = GetFileTime( reinterpret_cast<HANDLE>(handle), NULL, NULL, &write_time );
+	CloseHandle( handle );
 
 	if( !success )
 	{
