@@ -184,8 +184,7 @@ float gui::get_line_width(
 			kerning.x >>= 6;
 		}
 
-		const auto x_adjust = current_character.bearing.x;
-		width += kerning.x + (current_character.advance >> 6) + x_adjust;
+		width += kerning.x + (current_character.advance >> 6);
 	}
 
 	return width;
