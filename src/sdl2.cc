@@ -52,3 +52,4 @@ Uint32 sdl2::event_window_id( const SDL_Event &e )
 			return 0;
 	}
 }
+

@@ -113,3 +113,4 @@ GuiVec2 MenuSpacer::get_minimum_size() const
 {
 	return{ 0, size.h };
 }
+

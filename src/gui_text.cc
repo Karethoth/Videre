@@ -103,7 +103,8 @@ void gui::render_unicode(
 
 		// Render
 		const auto y_adjust = current_character.size.y - current_character.bearing.y;
-		const GLfloat pos_x = static_cast<float>(caret_pos_x * scale + kerning.x);
+		const auto x_adjust = current_character.bearing.x;
+		const GLfloat pos_x = static_cast<float>(caret_pos_x * scale + kerning.x + x_adjust);
 		const GLfloat pos_y = static_cast<float>(position.y + kerning.y - y_adjust);
 		const GLfloat w = current_character.size.x * scale;
 		const GLfloat h = current_character.size.y * scale;
@@ -183,7 +184,8 @@ float gui::get_line_width(
 			kerning.x >>= 6;
 		}
 
-		width += kerning.x + (current_character.advance >> 6);
+		const auto x_adjust = current_character.bearing.x;
+		width += kerning.x + (current_character.advance >> 6) + x_adjust;
 	}
 
 	return width;
@@ -219,17 +221,12 @@ void GuiLabel::render() const
 		throw runtime_error( "No shader found" );
 	}
 
-	auto font = Globals::freetype_faces.find( "M+" );
-	if( font == Globals::freetype_faces.end() )
-	{
-		throw runtime_error( "No default font found" );
-	}
-
-
 	glUseProgram( shader->second.program );
 
 	const auto color = style.get( style_state ).color_text;
 	const auto padding = style.get( style_state ).padding;
+	const auto font_face = get_default_font_face();
+
 
 	sync_font_face_sizes( font_size );
 
@@ -237,7 +234,7 @@ void GuiLabel::render() const
 		static_cast<int>(pos.x + padding.x),
 		static_cast<int>(window->size.h - pos.y - padding.y - font_size)
 	);
-	render_unicode( shader->second, content, cursor_pos, *window, font->second, color );
+	render_unicode( shader->second, content, cursor_pos, *window, font_face, color );
 }
 
 

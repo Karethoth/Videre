@@ -230,3 +230,4 @@ GuiElement *GuiElement::get_root() const
 	}
 	return current;
 }
+
