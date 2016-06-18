@@ -255,18 +255,70 @@ void GuiLabel::render() const
 
 
 
-void GuiLabel::handle_event( const GuiEvent &e )
+void GuiTextField::render() const
 {
-	if( e.type == RESIZE )
+	auto window = static_cast<Window*>( get_root() );
+	if( !window )
 	{
-		auto min_size = get_minimum_size();
-		size.w = max( min_size.w, e.resize.size.w );
-		size.h = max( min_size.h, e.resize.size.h );
-		return;
+		throw runtime_error( "No window found" );
+	}
+
+	auto shader = Globals::shaders.find( "2d" );
+	if( shader == Globals::shaders.end() )
+	{
+		throw runtime_error( "No shader found" );
+	}
+
+	glUseProgram( shader->second.program );
+
+	const auto color = style.get( style_state ).color_text;
+	const auto padding = style.get( style_state ).padding;
+	const auto font_face = get_default_font_face();
+
+	auto used_font_size = font_size;
+	if( dynamic_font_size )
+	{
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+		auto settings_font_size = settings::core["font_size"].get<int>();
+		if( settings_font_size > 0 )
+		{
+			used_font_size = settings_font_size;
+		}
+	}
+
+	{
+		lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
+		sync_font_face_sizes( used_font_size );
+	}
+
+	auto cursor_pos = GuiVec2(
+		static_cast<int>(pos.x + padding.x),
+		static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
+	);
+	render_unicode( shader->second, content, cursor_pos, *window, font_face, color );
+}
+
+
+
+void GuiTextField::handle_event( const GuiEvent &e )
+{
+
+	if( e.type == GuiEventType::MOUSE_BUTTON &&
+	    in_area( e.mouse_button.pos ) &&
+	    e.mouse_button.state == RELEASED )
+	{
+		is_active = true;
+	}
+	else
+	{
+		is_active = false;
 	}
 
 	GuiElement::handle_event( e );
 }
+
+
+
 
 
 

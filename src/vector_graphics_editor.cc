@@ -90,7 +90,7 @@ void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 {
 	// TODO: Decide if context menu should or should not close
 	//       when mouse is used in an another element
-	const auto close_when_moused_elsewhere = true;
+	const auto close_when_moused_elsewhere = false;
 
 	if( e.type == MOUSE_DRAG_END )
 	{
@@ -397,6 +397,7 @@ glm::vec4 VectorGraphicsCanvas::get_canvas_area() const
 }
 
 
+
 void VectorGraphicsCanvas::render_vector_img() const
 {
 	auto shader = Globals::shaders.find( "2d" );
@@ -433,6 +434,117 @@ void VectorGraphicsCanvas::render_vector_img() const
 
 			render_vector_img_item( *this, canvas_area, shader->second, item.get() );
 		}
+	}
+}
+
+
+
+VectorGraphicsToolbar::VectorGraphicsToolbar()
+{
+	// Create button
+	auto button = make_shared<GuiButton>();
+	button->style.normal.color_bg = { 0.0f, 0.0, 0.0, 0.0 };
+	button->style.hover.color_bg  = { 1.0f, 1.0, 1.0, 0.05 };
+
+	auto button_label = make_shared<GuiLabel>(
+		u8_to_unicode( "Test" )
+	);
+	auto label_padding = glm::vec4( 8, 6, 8, 8 );
+	button_label->style.normal.color_text = glm::vec4{ 0.8f };
+	button_label->style.hover.color_text  = glm::vec4{ 1.f };
+	button_label->style.normal.padding = label_padding;
+	button_label->style.hover.padding  = label_padding;
+
+
+	button->on_click = []( GuiElement *tgt, const GuiEvent &e )
+	{
+		if( e.type != MOUSE_BUTTON ||
+			e.mouse_button.state != RELEASED ||
+		    !tgt->in_area( e.mouse_button.pos ) )
+		{
+			return;
+		}
+
+		auto window = static_cast<Window*>(tgt->get_root());
+		if( !window )
+		{
+			return;
+		}
+
+		for( auto popup : window->popup_elements )
+		{
+			popup->deleted = true;
+		}
+
+		auto popup_menu = make_shared<PopupElement>();
+		popup_menu->style.normal.color_bg = { 0.15, 0.15, 0.15, 1.0 };
+		popup_menu->style.hover.color_bg  = { 0.15, 0.15, 0.15, 1.0 };
+		popup_menu->target_pos    = tgt->pos;
+		popup_menu->target_pos.y += tgt->size.h;
+
+		auto label = make_shared<GuiLabel>(
+			u8_to_unicode( "Nothing to see here" )
+		);
+		label->style.normal.color_text = { 1.0, 1.0, 1.0, 0.4 };
+		label->style.hover.color_text  = { 1.0, 1.0, 1.0, 0.5 };
+		label->style.normal.padding    = { 6, 4, 8, 8 };
+		label->style.hover.padding     = { 6, 4, 8, 8 };
+		label->dynamic_font_size       = true;
+		popup_menu->add_child( label );
+		popup_menu->parent = window;
+		window->popup_elements.push_back( popup_menu );
+
+		// Resize the context menu
+		GuiEvent event;
+		event.type = MOVE;
+		event.move.pos = tgt->pos;
+		event.move.pos.y += tgt->size.h;
+		popup_menu->handle_event( event );
+
+		event.type = RESIZE;
+		event.resize.size = { 100, 0 };
+		popup_menu->handle_event( event );
+	};
+
+	button->add_child( button_label );
+	add_child( button );
+}
+
+
+
+void VectorGraphicsToolbar::handle_event( const GuiEvent &e )
+{
+	if( e.type == RESIZE )
+	{
+		size = e.resize.size;
+		fit_children();
+	}
+	else
+	{
+		GuiElement::handle_event( e );
+
+	}
+}
+
+
+void VectorGraphicsToolbar::fit_children()
+{
+	GuiEvent event;
+
+	auto element_position_x = pos.x;
+	for( auto &child : children )
+	{
+		const auto child_min_size = child->get_minimum_size();
+
+		event.type = MOVE;
+		event.move.pos = { element_position_x, pos.y };
+		child->handle_event( event );
+
+		event.type = RESIZE;
+		event.resize.size = { child_min_size.w, size.h };
+		child->handle_event( event );
+
+		element_position_x += child_min_size.w;
 	}
 }
 

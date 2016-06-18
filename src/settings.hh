@@ -24,8 +24,11 @@ namespace tools
 
 }
 
+
+
 namespace settings
 {
 	extern std::mutex settings_mutex;
 	extern nlohmann::json core;
 }
+

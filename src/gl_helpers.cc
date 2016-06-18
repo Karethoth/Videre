@@ -131,6 +131,8 @@ size_t gl::render_text_2d(
 	static GLuint vao;
 	static GLuint vbo;
 
+	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
+
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	gui::any_gl_errors();

@@ -23,13 +23,19 @@ struct VectorGraphicsCanvas : gui::GuiElement
 };
 
 
+
 struct VectorGraphicsProperties : gui::GuiElement
 {
 };
 
 
+
 struct VectorGraphicsToolbar : gui::GuiElement
 {
+	VectorGraphicsToolbar();
+
+	void handle_event( const gui::GuiEvent &e ) override;
+	void fit_children();
 };
 
 

@@ -206,7 +206,7 @@ void load_freetype_font_faces()
 		}
 	}
 
-	//Globals::font_face_library.clear();
+	Globals::font_face_library.clear();
 
 	// Parse fonts from the settings.json to a list
 	vector<std::pair<string_u8, string_u8>> font_list;

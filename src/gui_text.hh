@@ -46,7 +46,6 @@ namespace gui
 		GuiLabel( string_u8 text, size_t size = 16 );
 
 		virtual void render() const override;
-		virtual void handle_event( const GuiEvent &e ) override;
 		virtual GuiVec2 get_minimum_size() const override;
 	};
 
@@ -54,6 +53,10 @@ namespace gui
 
 	struct GuiTextField : GuiLabel
 	{
+		bool is_active;
+		size_t max_characters;
+
+		GuiTextField();
 		virtual void render() const override;
 		virtual void handle_event( const GuiEvent &e ) override;
 	};
