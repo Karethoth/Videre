@@ -140,3 +140,11 @@ vector<DirectoryItem> tools::get_directory_listing( string path )
 
 #endif
 
+
+
+bool tools::is_file_readable( string path )
+{
+	ifstream f( path.c_str() );
+	return f.good();
+}
+

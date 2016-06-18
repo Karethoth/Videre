@@ -69,6 +69,9 @@
     <ClCompile Include="src\gui_text.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\globals.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh">

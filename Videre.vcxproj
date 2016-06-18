@@ -135,6 +135,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\common_tools.cc" />
+    <ClCompile Include="src\globals.cc" />
     <ClCompile Include="src\gl_helpers.cc" />
     <ClCompile Include="src\gui.cc" />
     <ClCompile Include="src\gui_button.cc" />

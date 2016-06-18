@@ -376,5 +376,34 @@ void Window::handle_event( const GuiEvent &e )
 	{
 		child->handle_event( e );
 	}
+
+	if( e.type == MOUSE_BUTTON ||
+		e.type == MOUSE_MOVE ||
+		e.type == MOUSE_SCROLL ||
+		e.type == MOUSE_DRAG ||
+		e.type == MOUSE_DRAG_END )
+	{
+		return;
+	}
+
+	// If the event wasn't sent to popup elements yet
+	// do it now
+
+	for( auto &popup : popup_elements )
+	{
+		if( e.type == RESIZE )
+		{
+			// Resize the popup to it's minimum size
+			GuiEvent resize_event;
+			resize_event.type = GuiEventType::RESIZE;
+			resize_event.resize.size.w = 1;
+			resize_event.resize.size.h = 1;
+			popup->handle_event( resize_event );
+		}
+		else
+		{
+			popup->handle_event( e );
+		}
+	}
 }
 

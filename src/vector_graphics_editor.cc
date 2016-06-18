@@ -6,6 +6,7 @@
 #include "gui_layouts.hh"
 #include "gl_helpers.hh"
 #include "globals.hh"
+#include "settings.hh"
 #include "text_helpers.hh"
 
 #include <memory>
@@ -157,7 +158,6 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	auto menu = make_shared<Menu>();
 
 	// Create a test button
-	const auto button_font_size = 14;
 	const auto label_padding = glm::vec4( 6.f, 4.f, 8.f, 8.f );
 
 	auto button1 = make_shared<GuiButton>();
@@ -183,9 +183,9 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	};
 	
 	auto button1_label = make_shared<GuiLabel>(
-		u8_to_unicode( "\xE0\xB8\x88\xE0\xB8\x87\xE0\xB8\x9D\xE0\xB9\x88\xE0\xB8\xB2\xE0\xB8\x9F\xE0\xB8\xB1\xE0\xB8\x99\xE0\xB8\x9E\xE0\xB8\xB1\xE0\xB8\x92\xE0\xB8\x99\xE0\xB8\xB2\xE0\xB8\xA7\xE0\xB8\xB4\xE0\xB8\x8A\xE0\xB8\xB2\xE0\xB8\x81\xE0\xB8\xB2\xE0\xB8\xA3" ),
-		button_font_size
+		u8_to_unicode( "\xE7\x8C\xAB\xE3\x81\xAF\xE5\xB0\x8F\xE3\x81\x95\xE3\x81\x84" )
 	);
+	button1_label->dynamic_font_size = true;
 	button1_label->style.normal.color_text = glm::vec4{ 0.9f };
 	button1_label->style.hover.color_text  = glm::vec4{ 1.0f };
 	button1_label->style.normal.padding = label_padding;
@@ -234,10 +234,10 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	};
 	
 	auto button2_label = make_shared<GuiLabel>(
-		u8_to_unicode( "x\xEC\xA1\xB0\xEC\x84\xA0\xE7\xA7\x81 abcdefghijklmnopqrstuvwxyz" ),
-		button_font_size
+		u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0_abcdefghijklmnopqrstuvwxyz" )
 	);
 
+	button2_label->dynamic_font_size = true;
 	button2_label->style.normal.color_text = glm::vec4{ 0.9f };
 	button2_label->style.hover.color_text  = glm::vec4{ 1.0f };
 	button2_label->style.normal.padding = label_padding;

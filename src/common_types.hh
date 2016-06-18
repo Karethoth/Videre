@@ -40,7 +40,7 @@ struct FontFaceIdentity
 	const size_t size;
 
 	FontFaceIdentity( const FT_Face font_face_ptr )
-		: face_ptr( font_face_ptr ), size( font_face_ptr->size->metrics.height ) {}
+	: face_ptr( font_face_ptr ), size( font_face_ptr->size->metrics.height ) {}
 
 	bool operator< ( const FontFaceIdentity &other) const
 	{

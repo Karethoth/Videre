@@ -88,6 +88,7 @@ constexpr auto make_defer( F func )
 }
 
 
+// File I/O
 
 template <typename T=std::wstring>
 T read_file_contents( const std::string& filename )
@@ -126,6 +127,9 @@ struct DirectoryItem
 
 std::vector<DirectoryItem> get_directory_listing( std::string path );
 
+bool is_file_readable( std::string path );
+
+// String helpers
 
 namespace str
 {

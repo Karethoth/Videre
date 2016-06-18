@@ -4,14 +4,23 @@
     "height": 640
   },
 
+  "font_size": 14,
   "fonts": [
     {
-      "name": "M+",
-      "path": "data/fonts/mplus.ttf"
+      "name": "Lucida Console",
+      "path": "C:\\Windows\\Fonts\\lucon.ttf"
     },
     {
-      "name": "default",
-      "path": "data/fonts/default.ttf"
+      "name": "arial",
+      "path": "C:\\Windows\\Fonts\\arial.ttf"
+    },
+    {
+      "name": "Malgun",
+      "path": "C:\\Windows\\Fonts\\malgun.ttf"
+    },
+    {
+      "name": "FreeMono",
+      "path": "/usr/share/fonts/truetype/freetype/FreeMono.ttf"
     }
   ]
 }

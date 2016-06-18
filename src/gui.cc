@@ -2,6 +2,7 @@
 #include "gl_helpers.hh"
 #include "globals.hh"
 #include <iostream>
+#include <algorithm>
 #include <exception>
 
 using namespace gui;
@@ -183,12 +184,15 @@ void GuiElement::handle_event( const GuiEvent &e )
 			pos = e.move.pos;
 			break;
 
-		case RESIZE:
-			size = e.resize.size;
-			break;
-
 		default:
 			break;
+	}
+
+	if( e.type == RESIZE )
+	{
+		const auto min_size = get_minimum_size();
+		size.w = max( min_size.w, e.resize.size.w );
+		size.h = max( min_size.h, e.resize.size.h );
 	}
 
 	auto hover_event = hover_helper.generate_event( e );

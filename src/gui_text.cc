@@ -3,6 +3,7 @@
 #include "text_helpers.hh"
 #include "gl_helpers.hh"
 #include "globals.hh"
+#include "settings.hh"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -65,7 +66,9 @@ void gui::render_unicode(
 	glBindBuffer( GL_ARRAY_BUFFER, vbo );
 	any_gl_errors();
 
+	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
 	const auto& font_face_contents = Globals::font_face_library[{ face }];
+
 	auto caret_pos_x = position.x;
 
 	GlCharacter previous_character{};
@@ -190,14 +193,18 @@ float gui::get_line_width(
 
 
 GuiLabel::GuiLabel( string_unicode text, size_t size )
-	: content(text), font_size(size)
+: content(text),
+  font_size(size),
+  dynamic_font_size(false)
 {
 }
 
 
 
 GuiLabel::GuiLabel( string_u8 text, size_t size )
-	: content(u8_to_unicode(text)), font_size(size)
+: content(u8_to_unicode(text)),
+  font_size(size),
+  dynamic_font_size(false)
 {
 }
 
@@ -223,12 +230,25 @@ void GuiLabel::render() const
 	const auto padding = style.get( style_state ).padding;
 	const auto font_face = get_default_font_face();
 
+	auto used_font_size = font_size;
+	if( dynamic_font_size )
+	{
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+		auto settings_font_size = settings::core["font_size"].get<int>();
+		if( settings_font_size > 0 )
+		{
+			used_font_size = settings_font_size;
+		}
+	}
 
-	sync_font_face_sizes( font_size );
+	{
+		lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
+		sync_font_face_sizes( used_font_size );
+	}
 
 	auto cursor_pos = GuiVec2(
 		static_cast<int>(pos.x + padding.x),
-		static_cast<int>(window->size.h - pos.y - padding.y - font_size)
+		static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
 	);
 	render_unicode( shader->second, content, cursor_pos, *window, font_face, color );
 }
@@ -252,14 +272,26 @@ void GuiLabel::handle_event( const GuiEvent &e )
 
 GuiVec2 GuiLabel::get_minimum_size() const
 {
+	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
 	const auto padding = style.get( style_state ).padding;
 	const auto font_face = get_default_font_face();
 
-	sync_font_face_sizes( font_size );
+	auto used_font_size = font_size;
+	if( dynamic_font_size )
+	{
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+		auto settings_font_size = settings::core["font_size"].get<int>();
+		if( settings_font_size > 0 )
+		{
+			used_font_size = settings_font_size;
+		}
+	}
+
+	sync_font_face_sizes( used_font_size );
 
 	const auto min_size = GuiVec2(
 		static_cast<int>(get_line_width( content, font_face ) + padding.x + padding.z),
-		static_cast<int>(font_size + padding.y + padding.w)
+		static_cast<int>(used_font_size + padding.y + padding.w)
 	);
 
 	return min_size;

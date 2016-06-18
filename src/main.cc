@@ -42,18 +42,6 @@
 using namespace std;
 
 
-// Set up the Globals
-atomic_bool Globals::should_quit{ false };
-
-mutex Globals::windows_mutex{};
-vector<gui::Window> Globals::windows{};
-map<string, ShaderProgram> Globals::shaders{};
-FT_Library Globals::freetype;
-map<string_u8, FT_Face> Globals::freetype_faces{};
-vector<pair<string_u8, FT_Face>> Globals::freetype_face_order{};
-map<FontFaceIdentity, FontFaceContents> Globals::font_face_library{};
-
-
 void handle_sdl_event( const SDL_Event &e )
 {
 
@@ -133,11 +121,14 @@ void init_graphics()
 	auto& first_window = Globals::windows[0];
 
 	// Use window size from the settings
-	const auto window_width  = settings::core["window"]["width"].get<int>();
-	const auto window_height = settings::core["window"]["height"].get<int>();
-	if( window_width && window_height )
 	{
-		SDL_SetWindowSize( first_window.window.get(), window_width, window_height );
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+		const auto window_width  = settings::core["window"]["width"].get<int>();
+		const auto window_height = settings::core["window"]["height"].get<int>();
+		if( window_width && window_height )
+		{
+			SDL_SetWindowSize( first_window.window.get(), window_width, window_height );
+		}
 	}
 
 	// Create SDL GL Context
@@ -194,13 +185,30 @@ void init_graphics()
 
 
 
-void init_freetype()
+void load_freetype_font_faces()
 {
-	if( FT_Init_FreeType( &Globals::freetype ) )
+	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
+
+	// Clear existing font faces
+	for( auto existing_font_face : Globals::freetype_face_order )
 	{
-		throw runtime_error( "FT_Init_FreeType failed" );
+		FT_Done_Face( existing_font_face.second );
 	}
 
+	Globals::freetype_face_order.clear();
+	Globals::freetype_faces.clear();
+
+	for( auto& font_faces : Globals::font_face_library )
+	{
+		for( auto& font_face : font_faces.second )
+		{
+			glDeleteTextures( 1, &font_face.second.gl_texture );
+		}
+	}
+
+	//Globals::font_face_library.clear();
+
+	// Parse fonts from the settings.json to a list
 	vector<std::pair<string_u8, string_u8>> font_list;
 
 	{
@@ -214,9 +222,17 @@ void init_freetype()
 
 	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
 
+	// Try to load the fonts
 	FT_Face tmp_face;
 	for( const auto &font : font_list )
 	{
+		if( !tools::is_file_readable( font.second ) )
+		{
+			wcout << "Failed to open font(" << font.first.c_str()
+				  << ") " << font.second.c_str() << "\n";
+			continue;
+		}
+
 		try
 		{
 			FT_New_Face( Globals::freetype, font.second.c_str(), 0, &tmp_face );
@@ -226,7 +242,7 @@ void init_freetype()
 		catch( ... )
 		{
 			wcout << "Failed to load font(" << font.first.c_str()
-			      << ") from " << font.second.c_str() << "\n";
+				  << ") " << font.second.c_str() << "\n";
 		}
 	}
 
@@ -237,6 +253,18 @@ void init_freetype()
 
 	// Set the initial font size for all font faces
 	sync_font_face_sizes( 16 );
+}
+
+
+
+void init_freetype()
+{
+	if( FT_Init_FreeType( &Globals::freetype ) )
+	{
+		throw runtime_error( "FT_Init_FreeType failed" );
+	}
+
+	load_freetype_font_faces();
 }
 
 
@@ -282,6 +310,52 @@ void update_windows()
 
 
 
+void update_settings()
+{
+	wstring_convert<codecvt_utf8<wchar_t>> converter;
+
+	wcout << "Updating settings...\n";
+
+	try
+	{
+		auto data = tools::read_file_contents( "settings.json" );
+		auto bytes = converter.to_bytes( data );
+
+		{
+			lock_guard<mutex> settings_lock( settings::settings_mutex );
+			settings::core = nlohmann::json::parse( bytes );
+		}
+
+		wcout << "WINDOW X: " << settings::core["window"]["width"].get<int>() << endl;
+		wcout << "WINDOW Y: " << settings::core["window"]["height"].get<int>() << endl;
+
+		load_freetype_font_faces();
+
+		lock_guard<mutex> windows_lock( Globals::windows_mutex );
+
+		for( auto& window : Globals::windows )
+		{
+			gui::GuiEvent resize_event;
+			resize_event.type = gui::GuiEventType::RESIZE;
+			resize_event.resize.size = window.size;
+			window.handle_event( resize_event );
+		}
+
+	}
+	catch( runtime_error &e )
+	{
+		wcout << "Exception: " << e.what() << endl;
+	}
+	catch( ... )
+	{
+		wcout << "Couldn't parse settings.json" << endl;
+	}
+
+
+}
+
+
+
 int main( int argc, char **argv )
 {
 	srand( static_cast<unsigned>( time( 0 ) ) );
@@ -298,33 +372,15 @@ int main( int argc, char **argv )
 	int const newMode = _setmode( _fileno( stdout ), _O_U8TEXT );
 	#endif
 
-	wstring_convert<codecvt_utf8<wchar_t>> converter;
-
-	function<void(void)> update_settings = [&]
+	try
 	{
-		wcout << "Updating settings...\n";
-
-		lock_guard<mutex> settings_lock( settings::settings_mutex );
-
-		try
-		{
-			auto data = tools::read_file_contents( "settings.json" );
-			auto bytes = converter.to_bytes( data );
-			settings::core = nlohmann::json::parse( bytes );
-			wcout << "WINDOW X: " << settings::core["window"]["width"].get<int>() << endl;
-			wcout << "WINDOW Y: " << settings::core["window"]["height"].get<int>() << endl;
-
-			// TODO: Reload fonts
-		}
-		catch( runtime_error &e )
-		{
-			wcout << "Exception: " << e.what() << endl;
-		}
-		catch( ... )
-		{
-			wcout << "Couldn't parse settings.json" << endl;
-		}
-	};
+		init_freetype();
+	}
+	catch( runtime_error &e )
+	{
+		wcerr << "Initialization error:" << e.what() << endl;
+		return 1;
+	}
 
 	auto settings_updater = tools::run_when_file_updated(
 		"settings.json",
@@ -334,23 +390,14 @@ int main( int argc, char **argv )
 
 	auto settings_updater_waiter = tools::make_defer( [&] { settings_updater.join(); } );
 
+
 	try
 	{
 		init_graphics();
 	}
-	catch( runtime_error& e )
+	catch( runtime_error &e )
 	{
-		wcerr << "ERROR-init_graphics: " << e.what() << endl;
-		return 1;
-	}
-
-	try
-	{
-		init_freetype();
-	}
-	catch( runtime_error& e )
-	{
-		wcerr << "ERROR-init_freetype: " << e.what() << endl;
+		wcerr << "Initialization error:" << e.what() << endl;
 		return 1;
 	}
 
@@ -364,11 +411,15 @@ int main( int argc, char **argv )
 		Globals::windows.clear();
 	} );
 
+
 	#ifdef  _WIN32
 	#ifndef _DEBUG
 	FreeConsole();
 	#endif
 	#endif
+
+
+	// Set up the basic GUI
 
 	auto split_layout = make_shared<gui::SplitLayout>();
 	split_layout->create_children = [] {
@@ -381,6 +432,7 @@ int main( int argc, char **argv )
 	Globals::windows[0].add_child( split_layout );
 	split_layout->split_at( gui::SplitAxis::VERTICAL, Globals::windows[0].size.w / 2 );
 	split_layout->split_bar.is_locked = false;
+
 
 	/* Main loop */
 	SDL_Event event;

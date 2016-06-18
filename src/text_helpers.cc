@@ -187,7 +187,7 @@ GlCharacter add_font_face_character( FT_Face face, unsigned long c )
 GlCharacter get_font_face_character( FT_Face face, unsigned long c )
 {
 	// Try with the given font face
-	auto& const font_face_contents = Globals::font_face_library[{face}];
+	const auto& font_face_contents = Globals::font_face_library[{face}];
 	auto character_info = font_face_contents.find( c );
 
 	if( character_info != font_face_contents.end() )
@@ -198,10 +198,10 @@ GlCharacter get_font_face_character( FT_Face face, unsigned long c )
 	// If the given font face didn't have it, loop over all of the font faces
 	for( auto &font_face : Globals::freetype_face_order )
 	{
-		font_face_contents = Globals::font_face_library[{font_face.second}];
+		const auto& face_contents = Globals::font_face_library[{font_face.second}];
 
-		const auto character_info = font_face_contents.find( c );
-		if( character_info != font_face_contents.end() )
+		const auto character_info = face_contents.find( c );
+		if( character_info != face_contents.end() )
 		{
 			return character_info->second;
 		}

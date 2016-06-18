@@ -83,11 +83,11 @@ GuiVec2 Menu::get_minimum_size() const
 	//       make it scrollable when there's more content than room
 
 	int minimum_height = 0;
-	int minimum_width = size.w;
+	int minimum_width = 0;
 	for( const auto& child : children )
 	{
 		auto child_minimum_size = child->get_minimum_size();
-		minimum_height += max( child->size.h, child_minimum_size.h );
+		minimum_height += child_minimum_size.h;
 		minimum_width = max( minimum_width, child_minimum_size.w );
 	}
 

@@ -17,6 +17,8 @@ namespace gui
 		float scale = 1.f
 	);
 
+
+
 	// Get line overflow
 	string_unicode get_line_overflow(
 		string_unicode text,
@@ -24,16 +26,21 @@ namespace gui
 		FT_Face face
 	);
 
+
+
 	// Get line overflow
 	float get_line_width(
 		string_unicode text,
 		FT_Face face
 	);
 
+
+
 	struct GuiLabel : GuiElement
 	{
 		string_unicode content;
 		size_t font_size;
+		bool dynamic_font_size;
 
 		GuiLabel( string_unicode text = string_unicode{}, size_t size = 16 );
 		GuiLabel( string_u8 text, size_t size = 16 );
@@ -41,6 +48,14 @@ namespace gui
 		virtual void render() const override;
 		virtual void handle_event( const GuiEvent &e ) override;
 		virtual GuiVec2 get_minimum_size() const override;
+	};
+
+
+
+	struct GuiTextField : GuiLabel
+	{
+		virtual void render() const override;
+		virtual void handle_event( const GuiEvent &e ) override;
 	};
 
 
