@@ -69,17 +69,17 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\include\json\src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\include\json\src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\include\json\src;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>H:\gits\videre\Videre\include\json\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\include\json\src;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>$(Configuration)\$(Platform)\</IntDir>

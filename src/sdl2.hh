@@ -6,7 +6,6 @@
 #include <SDL2/SDL_image.h>
 
 
-
 // Wrapping SDL2 stuff and some helpers
 namespace sdl2
 {

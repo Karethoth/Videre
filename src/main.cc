@@ -419,7 +419,7 @@ int main( int argc, char **argv )
 	#endif
 
 
-	// Set up the basic GUI
+	// Set up the GUI
 
 	auto split_layout = make_shared<gui::SplitLayout>();
 	split_layout->create_children = [] {
@@ -480,7 +480,6 @@ int main( int argc, char **argv )
 		render_windows();
 		update_windows();
 	}
-
 
 	return 0;
 }

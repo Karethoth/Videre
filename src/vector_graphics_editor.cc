@@ -449,7 +449,7 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 	auto button_label = make_shared<GuiLabel>(
 		u8_to_unicode( "Test" )
 	);
-	auto label_padding = glm::vec4( 8, 6, 8, 8 );
+	auto label_padding = glm::vec4( 8, 4, 8, 8 );
 	button_label->style.normal.color_text = glm::vec4{ 0.8f };
 	button_label->style.hover.color_text  = glm::vec4{ 1.f };
 	button_label->style.normal.padding = label_padding;

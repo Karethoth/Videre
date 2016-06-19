@@ -40,3 +40,4 @@ namespace gl
 		FT_Face face
 	);
 }
+

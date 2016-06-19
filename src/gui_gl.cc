@@ -3,11 +3,7 @@
 #ifdef _WIN32
 #pragma comment(lib, "opengl32.lib")
 
-#ifdef _DEBUG
-	#pragma comment(lib, "freetype26d.lib")
-#else
-	#pragma comment(lib, "freetype26.lib")
-#endif
+#pragma comment(lib, "freetype263.lib")
 #endif
 
 using namespace gui;
