@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Other Files">
+      <UniqueIdentifier>{e772fc07-18ee-4486-aad7-cc5aad4244d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Other Files\Shaders">
+      <UniqueIdentifier>{aea8162a-5772-40cd-a1b6-993fc76bc5b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Other Files\Git">
+      <UniqueIdentifier>{6cbbbc8b-ab82-487c-994f-dd0524bd7bd5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\common_tools.cc">
@@ -134,5 +143,31 @@
     <ClInclude Include="src\common_types.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="settings.json">
+      <Filter>Other Files</Filter>
+    </None>
+    <None Include="data\2d.frag">
+      <Filter>Other Files\Shaders</Filter>
+    </None>
+    <None Include="data\2d.vert">
+      <Filter>Other Files\Shaders</Filter>
+    </None>
+    <None Include="data\shader.frag">
+      <Filter>Other Files\Shaders</Filter>
+    </None>
+    <None Include="data\shader.vert">
+      <Filter>Other Files\Shaders</Filter>
+    </None>
+    <None Include=".gitmodules">
+      <Filter>Other Files\Git</Filter>
+    </None>
+    <None Include=".gitattributes">
+      <Filter>Other Files\Git</Filter>
+    </None>
+    <None Include=".gitignore">
+      <Filter>Other Files\Git</Filter>
+    </None>
   </ItemGroup>
 </Project>

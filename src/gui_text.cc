@@ -66,7 +66,6 @@ void gui::render_unicode(
 	glBindBuffer( GL_ARRAY_BUFFER, vbo );
 	any_gl_errors();
 
-	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
 	const auto& font_face_contents = Globals::font_face_library[{ face }];
 
 	auto caret_pos_x = position.x;
@@ -241,10 +240,8 @@ void GuiLabel::render() const
 		}
 	}
 
-	{
-		lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
-		sync_font_face_sizes( used_font_size );
-	}
+	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
+	sync_font_face_sizes( used_font_size );
 
 	auto cursor_pos = GuiVec2(
 		static_cast<int>(pos.x + padding.x),
@@ -341,9 +338,15 @@ GuiVec2 GuiLabel::get_minimum_size() const
 
 	sync_font_face_sizes( used_font_size );
 
+	// Font size and the height required don't scale 1 to 1,
+	// adjust the height a bit depending on the font size
+	const auto font_height_multiplier =
+		used_font_size < 16 ? 1.0f :
+		used_font_size < 24 ? 1.1f : 1.2f;
+
 	const auto min_size = GuiVec2(
 		static_cast<int>(get_line_width( content, font_face ) + padding.x + padding.z),
-		static_cast<int>(used_font_size + padding.y + padding.w)
+		static_cast<int>(used_font_size * font_height_multiplier + padding.y + padding.w)
 	);
 
 	return min_size;

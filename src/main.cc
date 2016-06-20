@@ -326,13 +326,19 @@ void update_settings()
 			settings::core = nlohmann::json::parse( bytes );
 		}
 
-		wcout << "WINDOW X: " << settings::core["window"]["width"].get<int>() << endl;
-		wcout << "WINDOW Y: " << settings::core["window"]["height"].get<int>() << endl;
+		// Lock windows_mutex to prevent updates and rendering on the
+		// main loop while we update font faces
+		lock_guard<mutex> windows_lock( Globals::windows_mutex );
 
 		load_freetype_font_faces();
 
-		lock_guard<mutex> windows_lock( Globals::windows_mutex );
+		// Because the font size or font faces used may have changed,
+		// the space that some text elements require could be different
 
+		// Thus, we need to kick off a RESIZE event to get all elements
+		// to fit around their children
+
+		// TODO: Check if a change actually happened
 		for( auto& window : Globals::windows )
 		{
 			gui::GuiEvent resize_event;

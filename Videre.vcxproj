@@ -176,6 +176,16 @@
     <ClInclude Include="src\vector_img.hh" />
     <ClInclude Include="src\window.hh" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitattributes" />
+    <None Include=".gitignore" />
+    <None Include=".gitmodules" />
+    <None Include="data\2d.frag" />
+    <None Include="data\2d.vert" />
+    <None Include="data\shader.frag" />
+    <None Include="data\shader.vert" />
+    <None Include="settings.json" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

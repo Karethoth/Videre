@@ -2,7 +2,7 @@
 
 // Using https://github.com/philsquared/Catch
 #define CATCH_CONFIG_RUNNER
-#include <catch.hh>
+#include <catch.hpp>
 #include <iostream>
 
 #ifdef _WIN32
