@@ -1,3 +1,7 @@
 [submodule "include/json"]
 	path = include/json
 	url = https://github.com/nlohmann/json.git
+
+[submodule "include/GSL"]
+	path = include/GSL
+	url = https://github.com/Microsoft/GSL.git
