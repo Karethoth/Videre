@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 fragment;
+layout(location = 0) out vec4 fragment;
 varying vec2 tex_coords;
 
 uniform vec4 color;

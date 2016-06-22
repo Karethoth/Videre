@@ -14,7 +14,7 @@ void GuiButton::handle_event( const GuiEvent &e )
 		case MOUSE_BUTTON:
 			if( on_click )
 			{
-				on_click( this, e );
+				on_click( static_cast<GuiElement*>( this ), e );
 			}
 			break;
 
@@ -35,8 +35,8 @@ void GuiButton::handle_event( const GuiEvent &e )
 
 		case RESIZE:
 			min_size = get_minimum_size();
-			size.w = max(min_size.w, e.resize.size.w);
-			size.h = max(min_size.h, e.resize.size.h);
+			size.w = max( min_size.w, e.resize.size.w );
+			size.h = max( min_size.h, e.resize.size.h );
 			return;
 			break;
 

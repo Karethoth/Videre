@@ -42,7 +42,7 @@ struct GuiVec2
 		};
 	};
 
-	GuiVec2( int _x=0, int _y=0 ) : x( _x ), y( _y ) {};
+	GuiVec2( int _x=0, int _y=0 ) : x( _x ), y( _y ), w(_x), h(_y) {};
 	glm::vec2 to_gl_vec() const { return { x, y }; };
 };
 
@@ -121,7 +121,7 @@ struct GuiEvent
 		} mouse_double_click;
 	};
 
-	GuiEvent() {};
+	GuiEvent() : type(GuiEventType::NO_EVENT) {};
 };
 
 
@@ -196,7 +196,8 @@ struct GuiElement
 
 	virtual void render() const;
 	virtual void handle_event( const GuiEvent &e );
-	virtual GuiElement *get_root() const;
+	virtual const GuiElement *get_root() const;
+	virtual GuiElement *get_root();
 
   protected:
 	virtual void init_child( GuiElement *child );

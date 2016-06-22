@@ -169,5 +169,6 @@
     <None Include=".gitignore">
       <Filter>Other Files\Git</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

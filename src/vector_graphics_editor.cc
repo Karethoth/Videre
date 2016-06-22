@@ -17,6 +17,9 @@ using namespace gui;
 
 
 VectorGraphicsEditor::VectorGraphicsEditor()
+: toolbar_element( nullptr ),
+  canvas_element( nullptr ),
+  properties_element( nullptr )
 {
 	// Split the element to top and bottom halfs
 	auto main_layout = make_shared<GridLayout>( 1, 2 );
@@ -78,7 +81,8 @@ VectorGraphicsCanvas::VectorGraphicsCanvas()
 	image = vector_img::VectorImg();
 	image.img_w = 320;
 	image.img_h = 240;
-	image.layers.emplace_back( new vector_img::ImgLayer() );
+	auto new_layer = make_unique<vector_img::ImgLayer>();
+	image.layers.emplace_back( move( new_layer ) );
 
 	camera_offset = { 0, 0 };
 	scale = 1.f;
@@ -174,10 +178,11 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 		const auto canvas_area = get_canvas_area();
 
-		auto item = unique_ptr<vector_img::ImgControlPoint>( new vector_img::ImgControlPoint() );
+		auto item = make_unique<vector_img::ImgControlPoint>();
 		item->x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x);
 		item->y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
 		image.layers[0]->items.push_back( move( item ) );
+		item.reset();
 
 		popup_menu->deleted = true;
 	};
@@ -216,14 +221,14 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 		const auto canvas_area = get_canvas_area();
 
-		auto item = unique_ptr<vector_img::ImgLine>( new vector_img::ImgLine() );
+		auto item = make_unique<vector_img::ImgLine>();
 		item->a.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x - 2 );
 		item->a.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
 		item->b.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x + 50 );
 		item->b.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
 		image.layers[0]->items.push_back( move( item ) );
 
-		auto item2 = unique_ptr<vector_img::ImgLine>( new vector_img::ImgLine() );
+		auto item2 = make_unique<vector_img::ImgLine>();
 		item2->a.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x );
 		item2->a.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y - 2 );
 		item2->b.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x );
@@ -311,13 +316,13 @@ void render_vector_img_item(
 	glm::vec2 tmp_a;
 	glm::vec2 tmp_b;
 
-	ImgControlPoint const *control_point;
-	ImgLine const *line;
+	const ImgControlPoint *control_point = nullptr;
+	const ImgLine *line = nullptr;
 
 	switch( item->type )
 	{
 		case CONTROL_POINT:
-			control_point = static_cast<const ImgControlPoint*>( item );
+			control_point = dynamic_cast<const ImgControlPoint*>( item );
 			tmp_a = {
 				canvas_area.x + control_point->x - 2,
 				canvas_area.y + control_point->y - 2
@@ -327,7 +332,7 @@ void render_vector_img_item(
 			break;
 
 		case LINE:
-			line = static_cast<const ImgLine*>( item );
+			line = dynamic_cast<const ImgLine*>( item );
 			tmp_a = glm::vec2{ line->a.x + canvas_area.x, canvas_area.y + line->a.y };
 			tmp_b = glm::vec2{ line->b.x + canvas_area.x, canvas_area.y + line->b.y };
 			gl::render_line_2d( shader, canvas.get_root()->size.to_gl_vec(), tmp_a, tmp_b );
@@ -340,6 +345,7 @@ void render_vector_img_item(
 			return;
 	}
 }
+
 
 
 glm::vec4 VectorGraphicsCanvas::get_canvas_area() const
@@ -387,13 +393,14 @@ glm::vec4 VectorGraphicsCanvas::get_canvas_area() const
 		img_area_size.y -= overflow_y * 2;
 	}
 
-	return glm::vec4 {
-		img_area_pos.x,
-		img_area_pos.y,
-		img_area_size.x,
-		img_area_size.y
-	};
 
+	auto area = glm::vec4();
+	area.x = img_area_pos.x;
+	area.y = img_area_pos.y;
+	area.z = img_area_size.x;
+	area.w = img_area_size.y;
+
+	return area;
 }
 
 
@@ -424,7 +431,6 @@ void VectorGraphicsCanvas::render_vector_img() const
 			continue;
 		}
 
-
 		for( auto &item : layer->items )
 		{
 			if( !item )
@@ -447,14 +453,15 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 	button->style.hover.color_bg  = { 1.0f, 1.0, 1.0, 0.05 };
 
 	auto button_label = make_shared<GuiLabel>(
-		u8_to_unicode( "Test" )
+		u8_to_unicode( "Test" ),
+		16
 	);
 	auto label_padding = glm::vec4( 8, 4, 8, 8 );
 	button_label->style.normal.color_text = glm::vec4{ 0.8f };
 	button_label->style.hover.color_text  = glm::vec4{ 1.f };
 	button_label->style.normal.padding = label_padding;
 	button_label->style.hover.padding  = label_padding;
-
+	button_label->dynamic_font_size    = false;
 
 	button->on_click = []( GuiElement *tgt, const GuiEvent &e )
 	{

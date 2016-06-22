@@ -25,11 +25,11 @@ using string_unicode = std::vector<uint32_t>;
 // struct to hold GL-texture and common info of an unicode code point
 struct GlCharacter
 {
-	GLuint gl_texture;
+	GLuint     gl_texture;
 	glm::ivec2 size;
 	glm::ivec2 bearing;
-	GLuint advance;
-	FT_UInt glyph;
+	GLuint     advance;
+	FT_UInt    glyph;
 };
 
 

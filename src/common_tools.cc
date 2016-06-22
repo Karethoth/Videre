@@ -79,7 +79,7 @@ vector<DirectoryItem> tools::get_directory_listing( string path )
 		{
 			items.push_back( {
 				DirectoryItemType::DIRECTORY,
-				data.cFileName,
+				string( data.cFileName ),
 				0,
 				0
 			} );

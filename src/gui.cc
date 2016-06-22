@@ -22,10 +22,13 @@ GuiVec2 gui::operator-( const GuiVec2 &a, const GuiVec2 &b )
 }
 
 
+
 GuiMouseHoverHelper::GuiMouseHoverHelper( const GuiElement &target )
 : target_element( target ), is_over( false )
 {
 }
+
+
 
 GuiEvent GuiMouseHoverHelper::generate_event( const GuiEvent &e )
 {
@@ -33,7 +36,7 @@ GuiEvent GuiMouseHoverHelper::generate_event( const GuiEvent &e )
 	event.type = NO_EVENT;
 
 	const bool was_over = is_over;
-	bool is_in_area;
+	bool is_in_area = false;
 
 	switch( e.type )
 	{
@@ -60,6 +63,7 @@ GuiEvent GuiMouseHoverHelper::generate_event( const GuiEvent &e )
 }
 
 
+
 const GuiElementStyle::StyleRules& GuiElementStyle::get( const GuiElementStyleState state ) const
 {
 	switch( state )
@@ -74,11 +78,14 @@ const GuiElementStyle::StyleRules& GuiElementStyle::get( const GuiElementStyleSt
 }
 
 
+
 GuiElement::GuiElement()
 : parent( nullptr ),
-  hover_helper( *this )
+  hover_helper( *this ),
+  style_state( NORMAL )
 {
 }
+
 
 
 bool GuiElement::in_area( const GuiVec2 &_pos ) const
@@ -91,6 +98,7 @@ bool GuiElement::in_area( const GuiVec2 &_pos ) const
 
 	return false;
 }
+
 
 
 void GuiElement::add_child( GuiElementPtr child )
@@ -225,13 +233,26 @@ void GuiElement::handle_event( const GuiEvent &e )
 
 
 
-GuiElement *GuiElement::get_root() const
+const GuiElement *GuiElement::get_root() const
 {
-	auto current = const_cast<GuiElement*>( this );
+	auto current = this;
 	while( current->parent )
 	{
 		current = current->parent;
 	}
 	return current;
 }
+
+
+
+GuiElement *GuiElement::get_root()
+{
+	auto current = this;
+	while( current->parent )
+	{
+		current = current->parent;
+	}
+	return current;
+}
+
 

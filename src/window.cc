@@ -23,7 +23,10 @@ using namespace gui;
 
 
 Window::Window()
-: closed(false), sdl_id(0), active_element(nullptr)
+: closed(false),
+  sdl_id(0),
+  active_element(nullptr),
+  gl_context( 0 )
 {
 	pos = { 0, 0 };
 	size = { 600, 400 };
@@ -60,9 +63,10 @@ Window::Window()
 Window::Window( Window&& other )
 {
 	using std::swap;
-	swap( window,   other.window );
-	swap( sdl_id,   other.sdl_id );
-	swap( closed,   other.closed );
+	swap( window, other.window );
+	swap( sdl_id, other.sdl_id );
+	swap( closed, other.closed );
+	swap( gl_context, other.gl_context );
 }
 
 
@@ -235,13 +239,13 @@ void Window::handle_sdl_event( const SDL_Event &e )
 			break;
 
 		case SDL_TEXTINPUT:
-			wcout << "TEXT: " << e.text.text << endl;
+			wcout << "TEXT: " << &e.text.text[0] << endl;
 			break;
 
 		case SDL_TEXTEDITING:
 			SDL_Rect rect = { 100, 100, 200, 200 };
 			SDL_SetTextInputRect( &rect );
-			wcout << "EDITING: " << e.edit.text << endl;
+			wcout << "EDITING: " << &e.edit.text[0] << endl;
 			break;
 	}
 }

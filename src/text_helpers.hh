@@ -2,16 +2,36 @@
 
 #include "common_types.hh"
 
+#include <mutex>
+#include <memory>
+
 string_unicode u8_to_unicode( const string_u8 &str );
 
-// Globals::font_face_library and these should be grouped into a class
-GlCharacter add_font_face_character( FT_Face face, unsigned long c );
-GlCharacter get_font_face_character( FT_Face face, unsigned long c );
-GlCharacter tmp_font_face_character( FT_Face face, unsigned long c );
+using FontFacePtr = std::shared_ptr<FT_FaceRec_>;
+FontFacePtr create_font_face( FT_Face face );
 
-bool font_face_character_exists( unsigned long c );
 
-FT_Face get_next_font_face( FT_Face face );
-FT_Face get_default_font_face();
-void sync_font_face_sizes( size_t font_size );
+struct FontFaceManager
+{
+	GlCharacter get_character( FT_Face face, unsigned long c );
+	FontFacePtr get_default_font_face();
+
+	void sync_font_face_sizes( size_t font_size );
+	void load_font_faces();
+
+
+  protected:
+	std::map<string_u8, FontFacePtr> freetype_faces;
+	std::vector<std::pair<string_u8, FontFacePtr>> freetype_face_order;
+	std::map<FontFaceIdentity, FontFaceContents> font_face_library;
+
+	GlCharacter add_character( FT_Face face, unsigned long c );
+	GlCharacter get_basic_character_info( FT_Face face, unsigned long c );
+	FontFacePtr get_next_font_face( FT_Face face );
+	bool character_exists( unsigned long c );
+
+
+  private:
+	std::mutex font_face_mutex;
+};
 

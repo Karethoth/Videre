@@ -185,86 +185,12 @@ void init_graphics()
 
 
 
-void load_freetype_font_faces()
-{
-	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
-
-	// Clear existing font faces
-	for( auto existing_font_face : Globals::freetype_face_order )
-	{
-		FT_Done_Face( existing_font_face.second );
-	}
-
-	Globals::freetype_face_order.clear();
-	Globals::freetype_faces.clear();
-
-	for( auto& font_faces : Globals::font_face_library )
-	{
-		for( auto& font_face : font_faces.second )
-		{
-			glDeleteTextures( 1, &font_face.second.gl_texture );
-		}
-	}
-
-	Globals::font_face_library.clear();
-
-	// Parse fonts from the settings.json to a list
-	vector<std::pair<string_u8, string_u8>> font_list;
-
-	{
-		lock_guard<mutex> settings_lock( settings::settings_mutex );
-		const auto fonts = settings::core["fonts"];
-		for( auto &font : fonts )
-		{
-			font_list.push_back( { font["name"].get<string_u8>(), font["path"].get<string_u8>() } );
-		}
-	}
-
-	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
-
-	// Try to load the fonts
-	FT_Face tmp_face;
-	for( const auto &font : font_list )
-	{
-		if( !tools::is_file_readable( font.second ) )
-		{
-			wcout << "Failed to open font(" << font.first.c_str()
-				  << ") " << font.second.c_str() << "\n";
-			continue;
-		}
-
-		try
-		{
-			FT_New_Face( Globals::freetype, font.second.c_str(), 0, &tmp_face );
-			Globals::freetype_face_order.push_back( { font.first, tmp_face } );
-			Globals::freetype_faces.insert( { font.first, tmp_face } );
-		}
-		catch( ... )
-		{
-			wcout << "Failed to load font(" << font.first.c_str()
-				  << ") " << font.second.c_str() << "\n";
-		}
-	}
-
-	if( !Globals::freetype_faces.size() )
-	{
-		wcout << "Warning: No fonts loaded. Expect the unexpected behaviour on their part.\n";
-	}
-
-	// Set the initial font size for all font faces
-	sync_font_face_sizes( 16 );
-}
-
-
-
 void init_freetype()
 {
 	if( FT_Init_FreeType( &Globals::freetype ) )
 	{
 		throw runtime_error( "FT_Init_FreeType failed" );
 	}
-
-	load_freetype_font_faces();
 }
 
 
@@ -310,11 +236,11 @@ void update_windows()
 
 
 
-void update_settings()
+void load_settings()
 {
-	wstring_convert<codecvt_utf8<wchar_t>> converter;
+	wcout << "Loading settings...\n";
 
-	wcout << "Updating settings...\n";
+	wstring_convert<codecvt_utf8<wchar_t>> converter;
 
 	try
 	{
@@ -322,31 +248,11 @@ void update_settings()
 		auto bytes = converter.to_bytes( data );
 
 		{
+			// Require both windows_lock and settings lock 
+			lock_guard<mutex> windows_lock( Globals::windows_mutex );
 			lock_guard<mutex> settings_lock( settings::settings_mutex );
 			settings::core = nlohmann::json::parse( bytes );
 		}
-
-		// Lock windows_mutex to prevent updates and rendering on the
-		// main loop while we update font faces
-		lock_guard<mutex> windows_lock( Globals::windows_mutex );
-
-		load_freetype_font_faces();
-
-		// Because the font size or font faces used may have changed,
-		// the space that some text elements require could be different
-
-		// Thus, we need to kick off a RESIZE event to get all elements
-		// to fit around their children
-
-		// TODO: Check if a change actually happened
-		for( auto& window : Globals::windows )
-		{
-			gui::GuiEvent resize_event;
-			resize_event.type = gui::GuiEventType::RESIZE;
-			resize_event.resize.size = window.size;
-			window.handle_event( resize_event );
-		}
-
 	}
 	catch( runtime_error &e )
 	{
@@ -356,8 +262,34 @@ void update_settings()
 	{
 		wcout << "Couldn't parse settings.json" << endl;
 	}
+}
 
 
+
+void apply_settings()
+{
+	wcout << "Applying settings...\n";
+
+	// Lock windows_mutex to prevent updates and rendering on the
+	// main loop while we update font faces
+	lock_guard<mutex> windows_lock( Globals::windows_mutex );
+
+	Globals::font_face_manager.load_font_faces();
+
+	// Because the font size or font faces used may have changed,
+	// the space that some text elements require could be different
+
+	// Thus, we need to kick off a RESIZE event to get all elements
+	// to fit around their children
+
+	// TODO: Check if a change actually happened
+	for( auto& window : Globals::windows )
+	{
+		gui::GuiEvent resize_event;
+		resize_event.type = gui::GuiEventType::RESIZE;
+		resize_event.resize.size = window.size;
+		window.handle_event( resize_event );
+	}
 }
 
 
@@ -380,26 +312,10 @@ int main( int argc, char **argv )
 
 	try
 	{
+		load_settings();
 		init_freetype();
-	}
-	catch( runtime_error &e )
-	{
-		wcerr << "Initialization error:" << e.what() << endl;
-		return 1;
-	}
-
-	auto settings_updater = tools::run_when_file_updated(
-		"settings.json",
-		update_settings,
-		Globals::should_quit
-	);
-
-	auto settings_updater_waiter = tools::make_defer( [&] { settings_updater.join(); } );
-
-
-	try
-	{
 		init_graphics();
+		apply_settings();
 	}
 	catch( runtime_error &e )
 	{
@@ -438,6 +354,20 @@ int main( int argc, char **argv )
 	Globals::windows[0].add_child( split_layout );
 	split_layout->split_at( gui::SplitAxis::VERTICAL, Globals::windows[0].size.w / 2 );
 	split_layout->split_bar.is_locked = false;
+
+
+	// Start the auto updater
+	auto settings_updater = tools::run_when_file_updated(
+		"settings.json",
+		[]() {
+			load_settings();
+			apply_settings();
+		},
+		Globals::should_quit,
+		chrono::milliseconds( 1000 )
+	);
+
+	auto settings_updater_waiter = tools::make_defer( [&] { settings_updater.join(); } );
 
 
 	/* Main loop */

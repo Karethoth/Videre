@@ -39,14 +39,13 @@ Shader::Shader( GLenum type, const string& filepath ) : type( type ), compiled( 
 	glGetShaderiv( shader, GL_INFO_LOG_LENGTH, &info_len );
 	if( info_len > 1 )
 	{
-		char* info_log = new char[sizeof( char )*info_len];
+		auto info_log = make_unique<char[]>( sizeof( char )*info_len );
 		string error_msg;
 
 		if( info_log )
 		{
-			glGetShaderInfoLog( shader, info_len, NULL, info_log );
-			error_msg = "Error compiling shader: " + string( info_log );
-			delete[] info_log;
+			glGetShaderInfoLog( shader, info_len, NULL, &info_log.get()[0] );
+			error_msg = "Error compiling shader: " + string( &info_log.get()[0] );
 		}
 		else
 		{

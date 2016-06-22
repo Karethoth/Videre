@@ -1,4 +1,4 @@
-#include "globals.hh";
+#include "globals.hh"
 
 using namespace std;
 
@@ -12,6 +12,5 @@ map<string, ShaderProgram> Globals::shaders{};
 
 mutex Globals::freetype_mutex{};
 FT_Library Globals::freetype;
-map<string_u8, FT_Face> Globals::freetype_faces{};
-vector<pair<string_u8, FT_Face>> Globals::freetype_face_order{};
-map<FontFaceIdentity, FontFaceContents> Globals::font_face_library{};
+FontFaceManager Globals::font_face_manager{};
+

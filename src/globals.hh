@@ -3,6 +3,7 @@
 #include "common_types.hh"
 #include "window.hh"
 #include "shaderProgram.hh"
+#include "text_helpers.hh"
 
 #include <map>
 #include <mutex>
@@ -24,8 +25,7 @@ struct Globals
 
 	static std::mutex freetype_mutex;
 	static FT_Library freetype;
-	static std::map<string_u8, FT_Face> freetype_faces;
-	static std::vector <std::pair<string_u8, FT_Face>> freetype_face_order;
-	static std::map<FontFaceIdentity, FontFaceContents> font_face_library;
+
+	static FontFaceManager font_face_manager;
 };
 

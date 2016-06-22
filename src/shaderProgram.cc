@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <exception>
+#include <memory>
 
 using namespace std;
 
@@ -36,14 +37,13 @@ using namespace std;
 		glGetProgramiv( program, GL_INFO_LOG_LENGTH, &info_len );
 		if( info_len > 1 )
 		{
-			char* info_log = new char[sizeof( char )*info_len];
+			auto info_log = make_unique<char[]>( sizeof( char )*info_len );
 			std::string error_msg;
 
 			if( info_log )
 			{
-				glGetProgramInfoLog( program, info_len, NULL, info_log );
-				error_msg = "Error linking shader program: " + std::string( info_log );
-				delete[] info_log;
+				glGetProgramInfoLog( program, info_len, NULL, &info_log.get()[0] );
+				error_msg = "Error linking shader program: " + std::string( &info_log.get()[0] );
 			}
 			else
 			{

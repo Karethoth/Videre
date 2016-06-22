@@ -11,6 +11,57 @@
 
 using namespace std;
 
+void gl::FramebufferObject::bind()
+{
+	if( !framebuffer_id )
+	{
+		return;
+	}
+
+	glBindFramebuffer( GL_FRAMEBUFFER, framebuffer_id );
+	glViewport( 0, 0, texture_size.x, texture_size.y );
+}
+
+
+
+void gl::FramebufferObject::resize( const glm::ivec2 size )
+{
+	texture_size = size;
+
+	if( framebuffer_id )
+	{
+		glDeleteFramebuffers( 1, &framebuffer_id );
+		glDeleteTextures( 1, &texture_id );
+	}
+
+	glGenFramebuffers( 1, &framebuffer_id );
+	if( !framebuffer_id )
+	{
+		throw runtime_error( "Couldn't create framebuffer" );
+	}
+	glBindFramebuffer( GL_FRAMEBUFFER, framebuffer_id );
+
+	glGenTextures( 1, &texture_id );
+	if( !texture_id )
+	{
+		throw runtime_error( "Couldn't create texture" );
+	}
+	glBindTexture( GL_TEXTURE_2D, texture_id );
+
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, 0 );
+	GLenum draw_buffers[1] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers( 1, &draw_buffers[0] );
+
+
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+	
+}
+
+
+
 void gl::render_line_2d(
 	const ShaderProgram &shader,
 	const glm::vec2 &window_size,
@@ -96,7 +147,7 @@ void gl::render_quad_2d( const ShaderProgram &shader, const glm::vec2 &window_si
 
 	if( !quad.vao )
 	{
-		quad = create_mesh( shader, quad_vertex_data, sizeof( quad_vertex_data ) );
+		quad = create_mesh( shader, &quad_vertex_data[0], sizeof( quad_vertex_data ) );
 	}
 
 	glm::mat4 model = glm::ortho<float>(0, window_size.x, 0, window_size.y);
@@ -130,8 +181,6 @@ size_t gl::render_text_2d(
 {
 	static GLuint vao;
 	static GLuint vbo;
-
-	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
 
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -174,25 +223,13 @@ size_t gl::render_text_2d(
 	glActiveTexture( GL_TEXTURE0 );
 	gui::any_gl_errors();
 
-	const auto& font_face_contents = Globals::font_face_library[{ face }];
-
 	GlCharacter previous_character{};
 
-	const auto unicode_str = u8_to_unicode( text );
+	auto unicode_str = u8_to_unicode( text );
 	for( const auto code_point : unicode_str )
 	{
 		// Find or create the character
-		GlCharacter c;
-		auto it = font_face_contents.find( code_point );
-		if( it != font_face_contents.end() )
-		{
-			c = it->second;
-		}
-		else
-		{
-			c = add_font_face_character( face, code_point );
-		}
-		gui::any_gl_errors();
+		auto c = Globals::font_face_manager.get_character( face, code_point );
 
 		// Get kerning
 		FT_Vector kerning{0,0};
@@ -216,28 +253,28 @@ size_t gl::render_text_2d(
 		const GLfloat w = c.size.x * scale.x;
 		const GLfloat h = c.size.y * scale.y;
 
-		const GLfloat vertices[6][4] = {
-			{ pos_x,     pos_y + h, 0.0, 0.0 },
-			{ pos_x,     pos_y,     0.0, 1.0 },
-			{ pos_x + w, pos_y,     1.0, 1.0 },
+		GLfloat vertices[6][4] = {
+			{ pos_x,     pos_y + h, 0.0f, 0.0f },
+			{ pos_x,     pos_y,     0.0f, 1.0f },
+			{ pos_x + w, pos_y,     1.0f, 1.0f },
 
-			{ pos_x,     pos_y + h, 0.0, 0.0 },
-			{ pos_x + w, pos_y,     1.0, 1.0 },
-			{ pos_x + w, pos_y + h, 1.0, 0.0 }
+			{ pos_x,     pos_y + h, 0.0f, 0.0f },
+			{ pos_x + w, pos_y,     1.0f, 1.0f },
+			{ pos_x + w, pos_y + h, 1.0f, 0.0f }
 		};
 
-		auto start = glm::vec4( vertices[1][0], vertices[1][1], 0, 1 );
-		auto end = glm::vec4( vertices[4][0], vertices[4][1], 0, 1 );
+		auto start = glm::vec4( vertices[1][0], vertices[1][1], 0.f, 1.f );
+		auto end = glm::vec4( vertices[4][0], vertices[4][1], 0.f, 1.f );
 
 		glBindTexture( GL_TEXTURE_2D, c.gl_texture );
 
-		glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vertices ), vertices );
+		glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vertices ), &vertices[0][0] );
 		gui::any_gl_errors();
 
 		glDrawArrays( GL_TRIANGLES, 0, 6 );
 		
 		// Bitshift by 6 to get pixels
-		caret_pos_x += static_cast<int>((c.advance >> 6) * scale.x) + kerning.x;
+		caret_pos_x += (c.advance >> 6) * scale.x + kerning.x;
 		previous_character = c;
 	}
 
@@ -245,6 +282,6 @@ size_t gl::render_text_2d(
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	glBindVertexArray( 0 );
 
-	return caret_pos_x - pos.x;
+	return static_cast<size_t>( caret_pos_x - pos.x );
 }
 

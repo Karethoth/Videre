@@ -38,6 +38,7 @@ struct VectorImg
 	size_t img_h;
 
 	std::vector<ImgLayerPtr> layers;
+	VectorImg();
 };
 
 
@@ -59,6 +60,7 @@ struct ImgItem
 	Color color;
 
 	ImgItem();
+	virtual ~ImgItem() {};
 };
 
 

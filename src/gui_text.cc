@@ -66,24 +66,13 @@ void gui::render_unicode(
 	glBindBuffer( GL_ARRAY_BUFFER, vbo );
 	any_gl_errors();
 
-	const auto& font_face_contents = Globals::font_face_library[{ face }];
-
 	auto caret_pos_x = position.x;
 
 	GlCharacter previous_character{};
 
 	for( auto c : text )
 	{
-		GlCharacter current_character;
-		if( font_face_character_exists( c ) )
-		{
-			current_character = get_font_face_character( face, c );
-		}
-		else
-		{
-			current_character = add_font_face_character( face, c );
-			any_gl_errors();
-		}
+		auto current_character = Globals::font_face_manager.get_character( face, c );
 
 		// Get kerning
 		FT_Vector kerning{0,0};
@@ -151,22 +140,12 @@ float gui::get_line_width(
 	FT_Face face
 )
 {
-	const auto& font_face_contents = Globals::font_face_library[{ face }];
-
 	float width = 0;
 
 	GlCharacter previous_character{};
 	for( auto c : text )
 	{
-		GlCharacter current_character;
-		if( font_face_character_exists( c ) )
-		{
-			current_character = get_font_face_character( face, c );
-		}
-		else
-		{
-			current_character = tmp_font_face_character( face, c );
-		}
+		auto current_character = Globals::font_face_manager.get_character( face, c );
 
 		// Get kerning
 		FT_Vector kerning{0,0};
@@ -211,7 +190,7 @@ GuiLabel::GuiLabel( string_u8 text, size_t size )
 
 void GuiLabel::render() const
 {
-	auto window = static_cast<Window*>( get_root() );
+	auto window = dynamic_cast<const Window*>( get_root() );
 	if( !window )
 	{
 		throw runtime_error( "No window found" );
@@ -227,7 +206,7 @@ void GuiLabel::render() const
 
 	const auto color = style.get( style_state ).color_text;
 	const auto padding = style.get( style_state ).padding;
-	const auto font_face = get_default_font_face();
+	const auto font_face = Globals::font_face_manager.get_default_font_face();
 
 	auto used_font_size = font_size;
 	if( dynamic_font_size )
@@ -240,21 +219,21 @@ void GuiLabel::render() const
 		}
 	}
 
-	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
-	sync_font_face_sizes( used_font_size );
+	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
 
 	auto cursor_pos = GuiVec2(
 		static_cast<int>(pos.x + padding.x),
 		static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
 	);
-	render_unicode( shader->second, content, cursor_pos, *window, font_face, color );
+
+	render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
 }
 
 
 
 void GuiTextField::render() const
 {
-	auto window = static_cast<Window*>( get_root() );
+	auto window = dynamic_cast<const Window*>( get_root() );
 	if( !window )
 	{
 		throw runtime_error( "No window found" );
@@ -270,7 +249,7 @@ void GuiTextField::render() const
 
 	const auto color = style.get( style_state ).color_text;
 	const auto padding = style.get( style_state ).padding;
-	const auto font_face = get_default_font_face();
+	const auto font_face = Globals::font_face_manager.get_default_font_face();
 
 	auto used_font_size = font_size;
 	if( dynamic_font_size )
@@ -283,16 +262,13 @@ void GuiTextField::render() const
 		}
 	}
 
-	{
-		lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
-		sync_font_face_sizes( used_font_size );
-	}
+	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
 
 	auto cursor_pos = GuiVec2(
 		static_cast<int>(pos.x + padding.x),
 		static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
 	);
-	render_unicode( shader->second, content, cursor_pos, *window, font_face, color );
+	render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
 }
 
 
@@ -316,14 +292,10 @@ void GuiTextField::handle_event( const GuiEvent &e )
 
 
 
-
-
-
 GuiVec2 GuiLabel::get_minimum_size() const
 {
-	lock_guard<mutex> freetype_lock( Globals::freetype_mutex );
 	const auto padding = style.get( style_state ).padding;
-	const auto font_face = get_default_font_face();
+	const auto font_face = Globals::font_face_manager.get_default_font_face();
 
 	auto used_font_size = font_size;
 	if( dynamic_font_size )
@@ -336,7 +308,7 @@ GuiVec2 GuiLabel::get_minimum_size() const
 		}
 	}
 
-	sync_font_face_sizes( used_font_size );
+	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
 
 	// Font size and the height required don't scale 1 to 1,
 	// adjust the height a bit depending on the font size
@@ -345,7 +317,7 @@ GuiVec2 GuiLabel::get_minimum_size() const
 		used_font_size < 24 ? 1.1f : 1.2f;
 
 	const auto min_size = GuiVec2(
-		static_cast<int>(get_line_width( content, font_face ) + padding.x + padding.z),
+		static_cast<int>(get_line_width( content, font_face.get() ) + padding.x + padding.z),
 		static_cast<int>(used_font_size * font_height_multiplier + padding.y + padding.w)
 	);
 
@@ -356,14 +328,14 @@ GuiVec2 GuiLabel::get_minimum_size() const
 
 void GuiTextArea::render() const
 {
-	const auto font_face = get_default_font_face();
+	const auto font_face = Globals::font_face_manager.get_default_font_face();
 	const auto padding = style.get( style_state ).padding;
 	const auto cursor_pos = GuiVec2(
 		static_cast<int>(pos.x + padding.x),
 		static_cast<int>(pos.y + padding.w * 2)
 	);
 
-	const auto window = static_cast<Window*>( get_root() );
+	const auto window = dynamic_cast<const Window*>( get_root() );
 	if( !window )
 	{
 		throw runtime_error( "No window found" );
@@ -377,7 +349,7 @@ void GuiTextArea::render() const
 		return;
 	}
 
-	render_unicode( shader->second, content, cursor_pos, *window, font_face );
+	render_unicode( shader->second, content, cursor_pos, *window, font_face.get() );
 }
 
 

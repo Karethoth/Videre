@@ -12,9 +12,10 @@ using namespace gui;
 using namespace std;
 
 
-GridLayout::GridLayout( int _columns, int _rows )
+GridLayout::GridLayout( size_t _columns, size_t _rows )
 : columns( _columns ), rows( _rows ),
-  auto_width(0), auto_height(0)
+  auto_width( 0 ), auto_height( 0 ),
+  used_width( 0 ), used_height( 0 )
 {
 	col_widths = vector<GuiPixelsOrPercentage>( columns, {0, AUTO} );
 	row_heights = vector<GuiPixelsOrPercentage>( rows, {0, AUTO} );
@@ -48,8 +49,8 @@ void GridLayout::handle_event( const GuiEvent &e )
 
 void GridLayout::render() const
 {
-	const int grid_element_count = rows * columns;
-	int children_rendered = 0;
+	const size_t grid_element_count = rows * columns;
+	size_t children_rendered = 0;
 
 	for( auto& child : children )
 	{
@@ -81,7 +82,7 @@ void GridLayout::update_dimensions()
 				break;
 
 			case PERCENTS:
-				used_width += (int)(col_width.val / 100.f * size.w);
+				used_width += static_cast<int>( col_width.val / 100.f * size.w );
 				break;
 
 			case AUTO:
@@ -99,7 +100,7 @@ void GridLayout::update_dimensions()
 				break;
 
 			case PERCENTS:
-				used_height += (int)(row_height.val / 100.f * size.h);
+				used_height += static_cast<int>( row_height.val / 100.f * size.h );
 				break;
 
 			case AUTO:
@@ -147,7 +148,7 @@ void GridLayout::fit_children()
 				child_size.w = auto_width;
 				break;
 			case PERCENTS:
-				child_size.w = (int)(col_width.val / 100.f * size.w);
+				child_size.w = static_cast<int>( col_width.val / 100.f * size.w );
 				break;
 		}
 
@@ -162,7 +163,7 @@ void GridLayout::fit_children()
 				child_size.h = auto_height;
 				break;
 			case PERCENTS:
-				child_size.h = (int)(row_height.val / 100.f * size.h);
+				child_size.h = static_cast<int>( row_height.val / 100.f * size.h );
 				break;
 		}
 		

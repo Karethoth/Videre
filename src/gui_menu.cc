@@ -40,7 +40,7 @@ void Menu::handle_event( const GuiEvent &e )
 void Menu::add_child( GuiElementPtr child )
 {
 	children.push_back( child );
-	child->parent = this;
+	child->parent = static_cast<GuiElement*>( this );
 	fit_children();
 }
 

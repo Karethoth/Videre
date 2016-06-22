@@ -1,8 +1,10 @@
 #include "text_helpers.hh"
 #include "globals.hh"
 #include "gui_gl.hh"
+#include "settings.hh"
 
 #include <iostream>
+#include <ftlcdfil.h>
 
 using namespace std;
 
@@ -96,14 +98,23 @@ namespace
 
 
 
+FontFacePtr create_font_face( FT_Face face )
+{
+	return FontFacePtr( face, []( FT_Face ptr ) {
+		if( ptr ) FT_Done_Face( ptr );
+	} );
+}
+
+
+
 string_unicode u8_to_unicode( const string_u8 &str )
 {
 	string_unicode unicode_str;
 	unicode_str.reserve( str.size() );
 
 	const char* str_ptr = str.data();
-	const char* const str_end = str.data() + str.size();
-	string_unicode::value_type code_point;
+	const char* const str_end = static_cast<const char*>(str.data() + str.size());
+	string_unicode::value_type code_point = 0;
 	size_t bytes_read = 0;
 
 	while( (code_point = read_next_unicode_code_point( str_ptr, str_end, bytes_read )) && bytes_read )
@@ -118,7 +129,7 @@ string_unicode u8_to_unicode( const string_u8 &str )
 
 
 
-GlCharacter add_font_face_character( FT_Face face, unsigned long c )
+GlCharacter FontFaceManager::add_character( FT_Face face, unsigned long c )
 {
 	auto glyph_index = FT_Get_Char_Index( face, c );
 
@@ -128,7 +139,7 @@ GlCharacter add_font_face_character( FT_Face face, unsigned long c )
 		const auto next_face = get_next_font_face( face );
 		if( next_face )
 		{
-			return add_font_face_character( next_face, c );
+			return add_character( next_face.get(), c );
 		}
 		
 		// This was the last face and no glyph was found,
@@ -142,9 +153,23 @@ GlCharacter add_font_face_character( FT_Face face, unsigned long c )
 		return {};
 	}
 
+
+	auto shader = Globals::shaders.find( "2d" );
+	if( shader == Globals::shaders.end() )
+	{
+		throw runtime_error( "Couldn't find 2d shader" );
+	}
+
+	glUseProgram( shader->second.program );
+
 	// Generate texture
-	GLuint texture;
+	GLuint texture=0;
 	glGenTextures( 1, &texture );
+	if( !texture )
+	{
+		return get_basic_character_info( face, c );
+	}
+
 	glBindTexture( GL_TEXTURE_2D, texture );
 	gui::any_gl_errors();
 
@@ -178,27 +203,33 @@ GlCharacter add_font_face_character( FT_Face face, unsigned long c )
 		glyph_index
 	};
 
-	Globals::font_face_library[FontFaceIdentity( face )].insert( { c, character } );
+	font_face_library[FontFaceIdentity( face )].insert( { c, character } );
 	return character;
 }
 
 
 
-GlCharacter get_font_face_character( FT_Face face, unsigned long c )
+GlCharacter FontFaceManager::get_character( FT_Face face, unsigned long c )
 {
-	// Try with the given font face
-	const auto& font_face_contents = Globals::font_face_library[{face}];
-	auto character_info = font_face_contents.find( c );
+	lock_guard<mutex> font_face_library_lock( font_face_mutex );
 
+	if( !character_exists( c ) )
+	{
+		return add_character( face, c );
+	}
+
+	// Try with the given font face
+	const auto& font_face_contents = font_face_library[{face}];
+	auto character_info = font_face_contents.find( c );
 	if( character_info != font_face_contents.end() )
 	{
 		return character_info->second;
 	}
 
 	// If the given font face didn't have it, loop over all of the font faces
-	for( auto &font_face : Globals::freetype_face_order )
+	for( auto &font_face : freetype_face_order )
 	{
-		const auto& face_contents = Globals::font_face_library[{font_face.second}];
+		const auto& face_contents = font_face_library[{font_face.second.get()}];
 
 		const auto character_info = face_contents.find( c );
 		if( character_info != face_contents.end() )
@@ -212,7 +243,7 @@ GlCharacter get_font_face_character( FT_Face face, unsigned long c )
 
 
 
-GlCharacter tmp_font_face_character( FT_Face face, unsigned long c )
+GlCharacter FontFaceManager::get_basic_character_info( FT_Face face, unsigned long c )
 {
 	auto glyph_index = FT_Get_Char_Index( face, c );
 
@@ -222,7 +253,7 @@ GlCharacter tmp_font_face_character( FT_Face face, unsigned long c )
 		const auto next_face = get_next_font_face( face );
 		if( next_face )
 		{
-			return tmp_font_face_character( next_face, c );
+			return get_basic_character_info( next_face.get(), c );
 		}
 
 		// This was the last face and no glyph was found,
@@ -246,12 +277,12 @@ GlCharacter tmp_font_face_character( FT_Face face, unsigned long c )
 
 
 
-bool font_face_character_exists( unsigned long c )
+bool FontFaceManager::character_exists( unsigned long c )
 {
 	// If the given font face didn't have it, loop over all of the font faces
-	for( auto &font_face : Globals::freetype_face_order )
+	for( auto &font_face : freetype_face_order )
 	{
-		const auto& font_face_contents = Globals::font_face_library[{font_face.second}];
+		const auto& font_face_contents = font_face_library[{font_face.second.get()}];
 		const auto character_info = font_face_contents.find( c );
 		if( character_info != font_face_contents.end() )
 		{
@@ -264,20 +295,20 @@ bool font_face_character_exists( unsigned long c )
 
 
 
-FT_Face get_next_font_face( FT_Face face )
+FontFacePtr FontFaceManager::get_next_font_face( FT_Face face )
 {
-	auto current = Globals::freetype_face_order.begin();
-	while( current != Globals::freetype_face_order.end() )
+	auto current = freetype_face_order.begin();
+	while( current != freetype_face_order.end() )
 	{
-		if( current->second == face )
+		if( current->second.get() == face )
 		{
 			break;
 		}
 		else current++;
 	}
 
-	if( current     == Globals::freetype_face_order.end() ||
-		current + 1 == Globals::freetype_face_order.end() )
+	if( current     == freetype_face_order.end() ||
+		current + 1 == freetype_face_order.end() )
 	{
 		return 0;
 	}
@@ -288,12 +319,13 @@ FT_Face get_next_font_face( FT_Face face )
 
 
 
-FT_Face get_default_font_face()
+FontFacePtr FontFaceManager::get_default_font_face()
 {
-	auto font = Globals::freetype_face_order.begin();
-	if( font == Globals::freetype_face_order.end() )
+	lock_guard<mutex> font_face_library_lock( font_face_mutex );
+	auto font = freetype_face_order.begin();
+	if( font == freetype_face_order.end() )
 	{
-		throw runtime_error( "No fonts to choose the default font from!" );
+		throw runtime_error( "No fonts to choose the default font from" );
 	}
 
 	return font->second;
@@ -301,11 +333,77 @@ FT_Face get_default_font_face()
 
 
 
-void sync_font_face_sizes( size_t font_size )
+void FontFaceManager::sync_font_face_sizes( size_t font_size )
 {
-	for( auto font : Globals::freetype_face_order )
+	lock_guard<mutex> font_face_library_lock( font_face_mutex );
+	for( auto font : freetype_face_order )
 	{
-		FT_Set_Pixel_Sizes( font.second, 0, font_size );
+		FT_Set_Pixel_Sizes( font.second.get(), 0, static_cast<FT_UInt>( font_size ) );
+	}
+}
+
+
+
+void FontFaceManager::load_font_faces()
+{
+	lock_guard<mutex> font_face_library_lock( font_face_mutex );
+
+	// Clear existing font faces
+	freetype_faces.clear();
+	freetype_face_order.clear();
+
+	for( auto& font_faces : font_face_library )
+	{
+		for( auto& font_face : font_faces.second )
+		{
+			glDeleteTextures( 1, &font_face.second.gl_texture );
+		}
+	}
+
+	font_face_library.clear();
+
+	// Parse fonts from the settings.json to a list
+	vector<std::pair<string_u8, string_u8>> font_list;
+
+	{
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+		const auto fonts = settings::core["fonts"];
+		for( auto &font : fonts )
+		{
+			font_list.push_back( { font["name"].get<string_u8>(), font["path"].get<string_u8>() } );
+		}
+	}
+
+	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
+
+	// Try to load the fonts
+	FT_Face tmp_face;
+	for( const auto &font : font_list )
+	{
+		if( !tools::is_file_readable( font.second ) )
+		{
+			wcout << "Failed to open font(" << font.first.c_str()
+				  << ") " << font.second.c_str() << "\n";
+			continue;
+		}
+
+		try
+		{
+			FT_New_Face( Globals::freetype, font.second.c_str(), 0, &tmp_face );
+			auto face_ptr = create_font_face( tmp_face );
+			freetype_face_order.push_back( { font.first, face_ptr } );
+			freetype_faces.insert( { font.first, face_ptr } );
+		}
+		catch( ... )
+		{
+			wcout << "Failed to load font(" << font.first.c_str()
+				  << ") " << font.second.c_str() << "\n";
+		}
+	}
+
+	if( !freetype_faces.size() )
+	{
+		wcout << "Warning: No fonts loaded. Expect the unexpected behaviour on their part.\n";
 	}
 }
 

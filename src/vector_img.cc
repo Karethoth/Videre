@@ -5,9 +5,20 @@
 using namespace vector_img;
 
 
-ImgItem::ImgItem()
+VectorImg::VectorImg()
+: img_w(0),
+  img_h(0)
 {
-	type = ImgItemType::NO_TYPE;
+
+}
+
+
+ImgItem::ImgItem()
+: type( ImgItemType::NO_TYPE ),
+  x( 0.0 ),
+  y( 0.0 ),
+  color( Color{ 255, 255, 255, 255 } )
+{
 }
 
 
@@ -20,6 +31,7 @@ ImgControlPoint::ImgControlPoint()
 
 
 ImgLine::ImgLine()
+: width( 0 )
 {
 	type = ImgItemType::LINE;
 }

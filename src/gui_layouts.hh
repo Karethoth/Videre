@@ -20,13 +20,13 @@ enum SplitAxis {
 
 struct GridLayout : GuiElement
 {
-	const int rows;
-	const int columns;
+	const size_t rows;
+	const size_t columns;
 
 	std::vector<GuiPixelsOrPercentage> col_widths;
 	std::vector<GuiPixelsOrPercentage> row_heights;
 
-	GridLayout( int _rows = 1, int _columns = 1 );
+	GridLayout( size_t _rows = 1, size_t _columns = 1 );
 
 	virtual void handle_event( const GuiEvent &e ) override;
 	virtual void render() const override;
