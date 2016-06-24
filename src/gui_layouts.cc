@@ -2,6 +2,7 @@
 #include "gui_gl.hh"
 #include "globals.hh"
 #include "gl_helpers.hh"
+#include "common_tools.hh"
 
 #include <iostream>
 #include <string>
@@ -82,7 +83,7 @@ void GridLayout::update_dimensions()
 				break;
 
 			case PERCENTS:
-				used_width += static_cast<int>( col_width.val / 100.f * size.w );
+				used_width += tools::float_to_int( col_width.val / 100.f * size.w );
 				break;
 
 			case AUTO:
@@ -100,7 +101,7 @@ void GridLayout::update_dimensions()
 				break;
 
 			case PERCENTS:
-				used_height += static_cast<int>( row_height.val / 100.f * size.h );
+			used_height += tools::float_to_int( row_height.val / 100.f * size.h );
 				break;
 
 			case AUTO:
@@ -148,7 +149,7 @@ void GridLayout::fit_children()
 				child_size.w = auto_width;
 				break;
 			case PERCENTS:
-				child_size.w = static_cast<int>( col_width.val / 100.f * size.w );
+				child_size.w = tools::float_to_int( col_width.val / 100.f * size.w );
 				break;
 		}
 
@@ -163,7 +164,7 @@ void GridLayout::fit_children()
 				child_size.h = auto_height;
 				break;
 			case PERCENTS:
-				child_size.h = static_cast<int>( row_height.val / 100.f * size.h );
+				child_size.h = tools::float_to_int( row_height.val / 100.f * size.h );
 				break;
 		}
 		

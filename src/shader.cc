@@ -24,7 +24,7 @@ Shader::Shader( GLenum type, const string& filepath ) : type( type ), compiled( 
 		throw runtime_error( "glCreateShader failed" );
 	}
 
-	const GLchar *source_ptr = (GLchar*)shader_source.c_str();
+	const GLchar *source_ptr = static_cast<const GLchar*>( shader_source.c_str() );
 	glShaderSource( shader, 1, &source_ptr, NULL );
 
 	glCompileShader( shader );

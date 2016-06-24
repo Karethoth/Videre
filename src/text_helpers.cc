@@ -322,12 +322,13 @@ FontFacePtr FontFaceManager::get_next_font_face( FT_Face face )
 FontFacePtr FontFaceManager::get_default_font_face()
 {
 	lock_guard<mutex> font_face_library_lock( font_face_mutex );
-	auto font = freetype_face_order.begin();
-	if( font == freetype_face_order.end() )
+
+	if( !freetype_face_order.size() )
 	{
 		throw runtime_error( "No fonts to choose the default font from" );
 	}
 
+	auto font = freetype_face_order.begin();
 	return font->second;
 }
 
@@ -356,7 +357,10 @@ void FontFaceManager::load_font_faces()
 	{
 		for( auto& font_face : font_faces.second )
 		{
-			glDeleteTextures( 1, &font_face.second.gl_texture );
+			if( font_face.second.gl_texture )
+			{
+				glDeleteTextures( 1, &font_face.second.gl_texture );
+			}
 		}
 	}
 
@@ -377,13 +381,13 @@ void FontFaceManager::load_font_faces()
 	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
 
 	// Try to load the fonts
-	FT_Face tmp_face;
+	FT_Face tmp_face = nullptr;
 	for( const auto &font : font_list )
 	{
 		if( !tools::is_file_readable( font.second ) )
 		{
 			wcout << "Failed to open font(" << font.first.c_str()
-				  << ") " << font.second.c_str() << "\n";
+			      << ") " << font.second.c_str() << "\n";
 			continue;
 		}
 
@@ -397,7 +401,7 @@ void FontFaceManager::load_font_faces()
 		catch( ... )
 		{
 			wcout << "Failed to load font(" << font.first.c_str()
-				  << ") " << font.second.c_str() << "\n";
+			      << ") " << font.second.c_str() << "\n";
 		}
 	}
 

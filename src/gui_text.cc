@@ -47,8 +47,8 @@ void gui::render_unicode(
 	const auto window_size = window.size;
 
 	const auto projection = glm::ortho<float>(
-		0, static_cast<float>(window_size.x),
-		0, static_cast<float>(window_size.y)
+		0, tools::int_to_float(window_size.x),
+		0, tools::int_to_float(window_size.y)
 	);
 
 	const auto tex_uniform = shader.get_uniform( "tex" );
@@ -93,8 +93,8 @@ void gui::render_unicode(
 		// Render
 		const auto y_adjust = current_character.size.y - current_character.bearing.y;
 		const auto x_adjust = current_character.bearing.x;
-		const GLfloat pos_x = static_cast<float>(caret_pos_x * scale + kerning.x + x_adjust);
-		const GLfloat pos_y = static_cast<float>(position.y + kerning.y - y_adjust);
+		const GLfloat pos_x = caret_pos_x * scale + kerning.x + x_adjust;
+		const GLfloat pos_y = tools::int_to_float( position.y + kerning.y - y_adjust );
 		const GLfloat w = current_character.size.x * scale;
 		const GLfloat h = current_character.size.y * scale;
 
@@ -108,18 +108,15 @@ void gui::render_unicode(
 			{ pos_x + w, pos_y + h, 1.0, 0.0 }
 		};
 
-		auto start = glm::vec4( vertices[1][0], vertices[1][1], 0, 1 );
-		auto end = glm::vec4( vertices[4][0], vertices[4][1], 0, 1 );
-
 		glBindTexture( GL_TEXTURE_2D, current_character.gl_texture );
 
-		glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vertices ), vertices );
+		glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vertices ), &vertices[0][0] );
 		gui::any_gl_errors();
 
 		glDrawArrays( GL_TRIANGLES, 0, 6 );
 		
 		// Bitshift by 6 to get pixels
-		caret_pos_x += static_cast<int>((current_character.advance >> 6) * scale) + kerning.x;
+		caret_pos_x += tools::float_to_int( (current_character.advance >> 6) * scale + kerning.x );
 		previous_character = current_character;
 	}
 }
@@ -190,85 +187,147 @@ GuiLabel::GuiLabel( string_u8 text, size_t size )
 
 void GuiLabel::render() const
 {
-	auto window = dynamic_cast<const Window*>( get_root() );
-	if( !window )
+	try
 	{
-		throw runtime_error( "No window found" );
-	}
-
-	auto shader = Globals::shaders.find( "2d" );
-	if( shader == Globals::shaders.end() )
-	{
-		throw runtime_error( "No shader found" );
-	}
-
-	glUseProgram( shader->second.program );
-
-	const auto color = style.get( style_state ).color_text;
-	const auto padding = style.get( style_state ).padding;
-	const auto font_face = Globals::font_face_manager.get_default_font_face();
-
-	auto used_font_size = font_size;
-	if( dynamic_font_size )
-	{
-		lock_guard<mutex> settings_lock( settings::settings_mutex );
-		auto settings_font_size = settings::core["font_size"].get<int>();
-		if( settings_font_size > 0 )
+		auto window = dynamic_cast<const Window*>( get_root() );
+		if( !window )
 		{
-			used_font_size = settings_font_size;
+			throw runtime_error( "No window found" );
 		}
+
+		auto shader = Globals::shaders.find( "2d" );
+		if( shader == Globals::shaders.end() )
+		{
+			throw runtime_error( "No shader found" );
+		}
+
+		glUseProgram( shader->second.program );
+
+		const auto color = style.get( style_state ).color_text;
+		const auto padding = style.get( style_state ).padding;
+		const auto font_face = Globals::font_face_manager.get_default_font_face();
+
+		auto used_font_size = font_size;
+		if( dynamic_font_size )
+		{
+			lock_guard<mutex> settings_lock( settings::settings_mutex );
+			auto settings_font_size = settings::core["font_size"].get<int>();
+			if( settings_font_size > 0 )
+			{
+				used_font_size = settings_font_size;
+			}
+		}
+
+		Globals::font_face_manager.sync_font_face_sizes( used_font_size );
+
+		auto cursor_pos = GuiVec2(
+			static_cast<int>(pos.x + padding.x),
+			static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
+		);
+
+		render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
+	}
+	catch( runtime_error &e )
+	{
+		wcout << "GuiLabel::render failed: " << e.what() << "\n";
+	}
+}
+
+
+
+GuiVec2 GuiLabel::get_minimum_size() const
+{
+	const auto padding = style.get( style_state ).padding;
+	try
+	{
+		const auto font_face = Globals::font_face_manager.get_default_font_face();
+
+		auto used_font_size = font_size;
+		if( dynamic_font_size )
+		{
+			lock_guard<mutex> settings_lock( settings::settings_mutex );
+			auto settings_font_size = settings::core["font_size"].get<int>();
+			if( settings_font_size > 0 )
+			{
+				used_font_size = settings_font_size;
+			}
+		}
+
+		Globals::font_face_manager.sync_font_face_sizes( used_font_size );
+
+		// Font size and the height required don't scale 1 to 1,
+		// adjust the height a bit depending on the font size
+		const auto font_height_multiplier =
+			used_font_size < 16 ? 1.0f :
+			used_font_size < 24 ? 1.1f : 1.2f;
+
+		const auto min_size = GuiVec2(
+			static_cast<int>(get_line_width( content, font_face.get() ) + padding.x + padding.z),
+			static_cast<int>(used_font_size * font_height_multiplier + padding.y + padding.w)
+		);
+
+		return min_size;
+	}
+	catch( runtime_error &e )
+	{
+		wcout << "GuiLabel::get_minimum_size failed: " << e.what() << "\n";
 	}
 
-	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
-
-	auto cursor_pos = GuiVec2(
-		static_cast<int>(pos.x + padding.x),
-		static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
+	// In case of an exception, just return
+	return GuiVec2(
+		tools::float_to_int( padding.x + padding.z ),
+		tools::float_to_int( padding.y + padding.w )
 	);
-
-	render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
-}
+};
 
 
 
 void GuiTextField::render() const
 {
-	auto window = dynamic_cast<const Window*>( get_root() );
-	if( !window )
+	try
 	{
-		throw runtime_error( "No window found" );
-	}
-
-	auto shader = Globals::shaders.find( "2d" );
-	if( shader == Globals::shaders.end() )
-	{
-		throw runtime_error( "No shader found" );
-	}
-
-	glUseProgram( shader->second.program );
-
-	const auto color = style.get( style_state ).color_text;
-	const auto padding = style.get( style_state ).padding;
-	const auto font_face = Globals::font_face_manager.get_default_font_face();
-
-	auto used_font_size = font_size;
-	if( dynamic_font_size )
-	{
-		lock_guard<mutex> settings_lock( settings::settings_mutex );
-		auto settings_font_size = settings::core["font_size"].get<int>();
-		if( settings_font_size > 0 )
+		auto window = dynamic_cast<const Window*>( get_root() );
+		if( !window )
 		{
-			used_font_size = settings_font_size;
+			throw runtime_error( "No window found" );
 		}
+
+		auto shader = Globals::shaders.find( "2d" );
+		if( shader == Globals::shaders.end() )
+		{
+			throw runtime_error( "No shader found" );
+		}
+
+		glUseProgram( shader->second.program );
+
+		const auto color = style.get( style_state ).color_text;
+		const auto padding = style.get( style_state ).padding;
+		const auto font_face = Globals::font_face_manager.get_default_font_face();
+
+		auto used_font_size = font_size;
+		if( dynamic_font_size )
+		{
+			lock_guard<mutex> settings_lock( settings::settings_mutex );
+			auto settings_font_size = settings::core["font_size"].get<int>();
+			if( settings_font_size > 0 )
+			{
+				used_font_size = settings_font_size;
+			}
+		}
+
+		Globals::font_face_manager.sync_font_face_sizes( used_font_size );
+
+		auto cursor_pos = GuiVec2(
+			tools::float_to_int( pos.x + padding.x ),
+			tools::float_to_int( window->size.h - pos.y - padding.y - used_font_size )
+		);
+
+		render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
 	}
-
-	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
-
-	auto cursor_pos = GuiVec2(
-		static_cast<int>(pos.x + padding.x),
-		static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
-	);
-	render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
+	catch( runtime_error &e )
+	{
+		wcout << "GuiTextField::render failed: " << e.what() << "\n";
+	}
 }
 
 
@@ -292,64 +351,37 @@ void GuiTextField::handle_event( const GuiEvent &e )
 
 
 
-GuiVec2 GuiLabel::get_minimum_size() const
-{
-	const auto padding = style.get( style_state ).padding;
-	const auto font_face = Globals::font_face_manager.get_default_font_face();
-
-	auto used_font_size = font_size;
-	if( dynamic_font_size )
-	{
-		lock_guard<mutex> settings_lock( settings::settings_mutex );
-		auto settings_font_size = settings::core["font_size"].get<int>();
-		if( settings_font_size > 0 )
-		{
-			used_font_size = settings_font_size;
-		}
-	}
-
-	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
-
-	// Font size and the height required don't scale 1 to 1,
-	// adjust the height a bit depending on the font size
-	const auto font_height_multiplier =
-		used_font_size < 16 ? 1.0f :
-		used_font_size < 24 ? 1.1f : 1.2f;
-
-	const auto min_size = GuiVec2(
-		static_cast<int>(get_line_width( content, font_face.get() ) + padding.x + padding.z),
-		static_cast<int>(used_font_size * font_height_multiplier + padding.y + padding.w)
-	);
-
-	return min_size;
-};
-
-
-
 void GuiTextArea::render() const
 {
-	const auto font_face = Globals::font_face_manager.get_default_font_face();
-	const auto padding = style.get( style_state ).padding;
-	const auto cursor_pos = GuiVec2(
-		static_cast<int>(pos.x + padding.x),
-		static_cast<int>(pos.y + padding.w * 2)
-	);
-
-	const auto window = dynamic_cast<const Window*>( get_root() );
-	if( !window )
+	try
 	{
-		throw runtime_error( "No window found" );
-		return;
-	}
+		const auto font_face = Globals::font_face_manager.get_default_font_face();
+		const auto padding = style.get( style_state ).padding;
+		const auto cursor_pos = GuiVec2(
+			tools::float_to_int( pos.x + padding.x ),
+			tools::float_to_int( pos.y + padding.w * 2 )
+		);
 
-	const auto shader = Globals::shaders.find( "2d" );
-	if( shader == Globals::shaders.end() )
+		const auto window = dynamic_cast<const Window*>( get_root() );
+		if( !window )
+		{
+			throw runtime_error( "No window found" );
+			return;
+		}
+
+		const auto shader = Globals::shaders.find( "2d" );
+		if( shader == Globals::shaders.end() )
+		{
+			throw runtime_error( "No shader found" );
+			return;
+		}
+
+		render_unicode( shader->second, content, cursor_pos, *window, font_face.get() );
+	}
+	catch( runtime_error &e )
 	{
-		throw runtime_error( "No shader found" );
-		return;
+		wcout << "GuiTextArea::render failed: " << e.what() << "\n";
 	}
-
-	render_unicode( shader->second, content, cursor_pos, *window, font_face.get() );
 }
 
 

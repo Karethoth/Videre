@@ -13,5 +13,14 @@ struct GuiButton : GuiElement
 	virtual GuiVec2 get_minimum_size() const override;
 };
 
+
+// Button with custom context
+// - Handy when on_click needs resources
+template<typename T>
+struct  GuiContextButton : GuiButton
+{
+	T context;
+};
+
 }
 

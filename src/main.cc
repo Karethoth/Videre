@@ -225,6 +225,7 @@ void update_windows()
 				continue;
 			}
 
+			(*it).update();
 			++it;
 		}
 	}
@@ -296,7 +297,7 @@ void apply_settings()
 
 int main( int argc, char **argv )
 {
-	srand( static_cast<unsigned>( time( 0 ) ) );
+	srand( time( 0 ) );
 
 	#ifdef  _DEBUG
 	auto defer_enter_to_quit = tools::make_defer( []()
@@ -371,7 +372,7 @@ int main( int argc, char **argv )
 
 
 	/* Main loop */
-	SDL_Event event;
+	SDL_Event event{};
 
 	auto next_frame = chrono::system_clock::now();
 
@@ -400,11 +401,11 @@ int main( int argc, char **argv )
 			fps_frames_left = fps_step_count;
 			auto fps_end_time = chrono::system_clock::now();
 			auto difference = (fps_end_time - fps_start_time);
-			auto milliseconds = (float)chrono::duration_cast<chrono::milliseconds>( difference ).count();
+			auto milliseconds = chrono::duration_cast<chrono::milliseconds>( difference ).count();
 			fps_start_time = fps_end_time;
 			if( milliseconds <= 0.f )
 			{
-				milliseconds = 1.f;
+				milliseconds = 1;
 			}
 			fps = 1.f / (milliseconds / fps_step_count / 1000.f);
 		}

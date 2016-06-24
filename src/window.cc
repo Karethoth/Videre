@@ -252,6 +252,13 @@ void Window::handle_sdl_event( const SDL_Event &e )
 
 
 
+void Window::update()
+{
+	sync_popups();
+}
+
+
+
 void Window::render() const
 {
 	SDL_GL_MakeCurrent( window.get(), gl_context );
@@ -310,6 +317,8 @@ void Window::handle_event( const GuiEvent &e )
 		}
 	}
 
+	sync_popups();
+
 	// For certain mouse events, check if one of the popup elements captures it
 	// and if it does, let it handle the event
 	auto captured_by_popup = false;
@@ -319,6 +328,8 @@ void Window::handle_event( const GuiEvent &e )
 	    e.type == MOUSE_DRAG ||
 		e.type == MOUSE_DRAG_END )
 	{
+		lock_guard<mutex> popup_elements_lock( popup_elements_mutex );
+
 		// We want to go over the elements starting from newest one (the last one pushed in)
 		for( auto it = popup_elements.rbegin(); it != popup_elements.rend(); it++ )
 		{
@@ -352,6 +363,7 @@ void Window::handle_event( const GuiEvent &e )
 				(*it)->handle_event( e );
 				break;
 			}
+
 			// We want to pass MOUSE_MOVE events to all popup elements
 			// so that they can generate their MOUSE_OUT events
 			else if( e.type == MOUSE_MOVE )
@@ -360,16 +372,6 @@ void Window::handle_event( const GuiEvent &e )
 			}
 		}
 	}
-
-	popup_elements.erase( remove_if( popup_elements.begin(), popup_elements.end(), []( auto element )
-	{
-		auto deleted = element->deleted;
-		if( deleted )
-		{
-			return true;
-		}
-		return deleted;
-	} ), popup_elements.end());
 
 	if( captured_by_popup )
 	{
@@ -393,6 +395,7 @@ void Window::handle_event( const GuiEvent &e )
 	// If the event wasn't sent to popup elements yet
 	// do it now
 
+	lock_guard<mutex> popup_elements_lock( popup_elements_mutex );
 	for( auto &popup : popup_elements )
 	{
 		if( e.type == RESIZE )
@@ -408,6 +411,73 @@ void Window::handle_event( const GuiEvent &e )
 		{
 			popup->handle_event( e );
 		}
+	}
+}
+
+
+
+void Window::add_popup( std::shared_ptr<PopupElement> popup )
+{
+	lock_guard<mutex> popup_lock( popup_element_queues_mutex );
+	popup_element_queue_add.push_back( popup );
+}
+
+
+
+void Window::remove_popup( PopupElement *popup )
+{
+	lock_guard<mutex> popup_lock( popup_element_queues_mutex );
+	popup_element_queue_remove.push_back( popup );
+}
+
+
+
+void Window::clear_popups()
+{
+	lock_guard<mutex> popup_elements_lock( popup_elements_mutex );
+	lock_guard<mutex> popup_queues_lock( popup_element_queues_mutex );
+	for( auto& popup : popup_elements )
+	{
+		popup_element_queue_remove.push_back( popup.get() );
+	}
+}
+
+
+
+void Window::sync_popups()
+{
+	lock_guard<mutex> popup_elements_lock( popup_elements_mutex );
+	lock_guard<mutex> popup_queues_lock( popup_element_queues_mutex );
+
+	if( popup_element_queue_add.size() )
+	{
+		popup_elements.insert(
+			popup_elements.end(),
+			popup_element_queue_add.begin(),
+			popup_element_queue_add.end()
+		);
+
+		popup_element_queue_add.clear();
+	}
+
+	if( popup_element_queue_remove.size() )
+	{
+		for( auto popup_ptr : popup_element_queue_remove )
+		{
+			auto it = std::find_if(
+				popup_elements.begin(),
+				popup_elements.end(),
+				[popup_ptr]( auto popup ) {
+					return popup.get() == popup_ptr;
+				}
+			);
+
+			if( it != popup_elements.end() )
+			{
+				popup_elements.erase( it );
+			}
+		}
+		popup_element_queue_remove.clear();
 	}
 }
 

@@ -76,9 +76,9 @@ void VectorGraphicsEditor::handle_event( const GuiEvent &e )
 
 
 VectorGraphicsCanvas::VectorGraphicsCanvas()
+: image( vector_img::VectorImg{} )
 {
 	// Set up the image
-	image = vector_img::VectorImg();
 	image.img_w = 320;
 	image.img_h = 240;
 	auto new_layer = make_unique<vector_img::ImgLayer>();
@@ -110,10 +110,10 @@ void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 		}
 		else if( close_when_moused_elsewhere )
 		{
-			auto window = dynamic_cast<Window*>(get_root());
+			auto window = dynamic_cast<Window*>( get_root() );
 			if( window )
 			{
-				window->popup_elements.clear();
+				window->clear_popups();
 			}
 		}
 	}
@@ -124,13 +124,11 @@ void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 		if( (close_when_moused_elsewhere || is_in_area) &&
 		    (e.mouse_button.button != 3 || e.mouse_button.state != RELEASED) )
 		{
-			auto window = dynamic_cast<Window*>(get_root());
+			auto window = dynamic_cast<Window*>( get_root() );
 			if( window )
 			{
-				window->popup_elements.clear();
+				window->clear_popups();
 			}
-
-			return;
 		}
 		else if( is_in_area )
 		{
@@ -144,6 +142,7 @@ void VectorGraphicsCanvas::handle_event( const gui::GuiEvent &e )
 }
 
 
+
 void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 {
 	auto window = dynamic_cast<Window*>(get_root());
@@ -152,7 +151,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 		return;
 	}
 
-	window->popup_elements.clear();
+	window->clear_popups();
 
 	auto popup_menu = make_shared<PopupElement>();
 	popup_menu->style.normal.color_bg = { 0.8, 0.8, 0.8, 0.6 };
@@ -164,11 +163,14 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	// Create a test button
 	const auto label_padding = glm::vec4( 6.f, 4.f, 8.f, 8.f );
 
-	auto button1 = make_shared<GuiButton>();
+	auto button1 = make_shared<GuiContextButton<PopupElementContext>>();
+	button1->context.popup = popup_menu.get();
 	button1->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
 	button1->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
-	button1->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
+	button1->on_click = [&image=image, this]( GuiElement *element, const GuiEvent &e )
 	{
+		auto window = dynamic_cast<Window*>( element->get_root() );
+		auto button = dynamic_cast<GuiContextButton<PopupElementContext>*>( element );
 		if( e.mouse_button.button != 1 ||
 			e.mouse_button.state != RELEASED ||
 			!element->in_area( e.mouse_button.pos ) )
@@ -179,12 +181,12 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 		const auto canvas_area = get_canvas_area();
 
 		auto item = make_unique<vector_img::ImgControlPoint>();
-		item->x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x);
-		item->y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
+		item->x = button->context.popup->target_pos.x - canvas_area.x;
+		item->y = button->context.popup->target_pos.y - canvas_area.y;
 		image.layers[0]->items.push_back( move( item ) );
 		item.reset();
 
-		popup_menu->deleted = true;
+		window->remove_popup( button->context.popup );
 	};
 	
 	auto button1_label = make_shared<GuiLabel>(
@@ -207,11 +209,14 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	menu->add_child( spacer );
 
 	// Add another test button
-	auto button2 = make_shared<GuiButton>();
+	auto button2 = make_shared<GuiContextButton<PopupElementContext>>();
+	button2->context.popup = popup_menu.get();
 	button2->style.normal.color_bg = { 0.0, 0.0, 0.0, 0.8 };
 	button2->style.hover.color_bg  = { 0.0, 0.0, 0.0, 1.0 };
-	button2->on_click = [&image=image, popup_menu, this]( GuiElement *element, const GuiEvent &e )
+	button2->on_click = [&image=image, this]( GuiElement *element, const GuiEvent &e )
 	{
+		auto window = dynamic_cast<Window*>( element->get_root() );
+		auto button = dynamic_cast<GuiContextButton<PopupElementContext>*>( element );
 		if( e.mouse_button.button != 1 ||
 			e.mouse_button.state != RELEASED ||
 			!element->in_area( e.mouse_button.pos ) )
@@ -221,21 +226,13 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 
 		const auto canvas_area = get_canvas_area();
 
-		auto item = make_unique<vector_img::ImgLine>();
-		item->a.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x - 2 );
-		item->a.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
-		item->b.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x + 50 );
-		item->b.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y );
+		auto item = make_unique<vector_img::ImgControlPoint>();
+		item->x = button->context.popup->target_pos.x - canvas_area.x;
+		item->y = button->context.popup->target_pos.y - canvas_area.y;
 		image.layers[0]->items.push_back( move( item ) );
+		item.reset();
 
-		auto item2 = make_unique<vector_img::ImgLine>();
-		item2->a.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x );
-		item2->a.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y - 2 );
-		item2->b.x = static_cast<float>( popup_menu->target_pos.x - canvas_area.x );
-		item2->b.y = static_cast<float>( popup_menu->target_pos.y - canvas_area.y + 50 );
-		image.layers[0]->items.push_back( move( item2 ) );
-
-		popup_menu->deleted = true;
+		window->remove_popup( button->context.popup );
 	};
 	
 	auto button2_label = make_shared<GuiLabel>(
@@ -287,7 +284,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 		popup_menu->handle_event( event );
 	}
 
-	window->popup_elements.push_back( popup_menu );
+	window->add_popup( popup_menu );
 	
 	// Send the current mouse position to the popup menu
 	event.type = MOUSE_MOVE;
@@ -372,12 +369,12 @@ glm::vec4 VectorGraphicsCanvas::get_canvas_area() const
 
 	if( img_pos.x < pos.x )
 	{
-		img_area_pos.x = static_cast<float>( pos.x );
+		img_area_pos.x = tools::int_to_float( pos.x );
 	}
 
 	if( img_pos.y < pos.y  )
 	{
-		img_area_pos.y = static_cast<float>( pos.y );
+		img_area_pos.y = tools::int_to_float( pos.y );
 	}
 
 	const auto overflow_x = img_pos.x + img_size.x - pos.x  - size.w;
@@ -472,16 +469,13 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 			return;
 		}
 
-		auto window = static_cast<Window*>(tgt->get_root());
+		auto window = dynamic_cast<Window*>(tgt->get_root());
 		if( !window )
 		{
 			return;
 		}
 
-		for( auto popup : window->popup_elements )
-		{
-			popup->deleted = true;
-		}
+		window->clear_popups();
 
 		auto popup_menu = make_shared<PopupElement>();
 		popup_menu->style.normal.color_bg = { 0.15, 0.15, 0.15, 1.0 };
@@ -499,7 +493,7 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 		label->dynamic_font_size       = true;
 		popup_menu->add_child( label );
 		popup_menu->parent = window;
-		window->popup_elements.push_back( popup_menu );
+		window->add_popup( popup_menu );
 
 		// Resize the context menu
 		GuiEvent event;

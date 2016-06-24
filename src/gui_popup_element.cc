@@ -1,4 +1,5 @@
 #include "gui_popup_element.hh"
+#include "window.hh"
 
 using namespace std;
 using namespace gui;
@@ -14,5 +15,31 @@ void PopupElement::handle_event( const GuiEvent &e )
 void PopupElement::render() const
 {
 	GuiElement::render();
+}
+
+
+
+PopupElementHandleHelper::PopupElementHandleHelper( GuiElement& parent )
+: parent( parent ),
+  handles()
+{
+}
+
+
+
+void PopupElementHandleHelper::clear_popups()
+{
+	auto window = dynamic_cast<Window*>( parent.get_root() );
+	if( !window )
+	{
+		return;
+	}
+
+	for( auto popup_handle : handles )
+	{
+		window->remove_popup( popup_handle );
+	}
+
+	handles.clear();
 }
 

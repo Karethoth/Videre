@@ -263,9 +263,6 @@ size_t gl::render_text_2d(
 			{ pos_x + w, pos_y + h, 1.0f, 0.0f }
 		};
 
-		auto start = glm::vec4( vertices[1][0], vertices[1][1], 0.f, 1.f );
-		auto end = glm::vec4( vertices[4][0], vertices[4][1], 0.f, 1.f );
-
 		glBindTexture( GL_TEXTURE_2D, c.gl_texture );
 
 		glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vertices ), &vertices[0][0] );

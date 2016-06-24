@@ -88,6 +88,23 @@ constexpr auto make_defer( F func )
 }
 
 
+
+// int_to_float and float_to_int conversions
+// - Because static_cast causes a warning from CppCoreCheck
+//   and not casting causes a warning from compiler
+// - Just two warnings here either way is better
+inline float int_to_float( const int i ) noexcept
+{
+	return static_cast<float>( i );
+}
+
+inline int float_to_int( const float f ) noexcept
+{
+	return static_cast<int>( f );
+}
+
+
+
 // File I/O
 
 template <typename T=std::wstring>

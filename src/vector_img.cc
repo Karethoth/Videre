@@ -9,8 +9,8 @@ VectorImg::VectorImg()
 : img_w(0),
   img_h(0)
 {
-
 }
+
 
 
 ImgItem::ImgItem()
