@@ -28,10 +28,22 @@ void gl::FramebufferObject::resize( const glm::ivec2 size )
 {
 	texture_size = size;
 
+	auto shader = Globals::shaders.find( "2d" );
+	if( shader == Globals::shaders.end() )
+	{
+		return;
+	}
+	gui::any_gl_errors();
+
+	glUseProgram( shader->second.program );
+	gui::any_gl_errors();
+
 	if( framebuffer_id )
 	{
 		glDeleteFramebuffers( 1, &framebuffer_id );
 		glDeleteTextures( 1, &texture_id );
+		framebuffer_id = 0;
+		texture_id = 0;
 	}
 
 	glGenFramebuffers( 1, &framebuffer_id );
@@ -40,6 +52,7 @@ void gl::FramebufferObject::resize( const glm::ivec2 size )
 		throw runtime_error( "Couldn't create framebuffer" );
 	}
 	glBindFramebuffer( GL_FRAMEBUFFER, framebuffer_id );
+	gui::any_gl_errors();
 
 	glGenTextures( 1, &texture_id );
 	if( !texture_id )
@@ -50,14 +63,29 @@ void gl::FramebufferObject::resize( const glm::ivec2 size )
 
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	gui::any_gl_errors();
 
 	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_id, 0 );
+	gui::any_gl_errors();
 	GLenum draw_buffers[1] = { GL_COLOR_ATTACHMENT0 };
 	glDrawBuffers( 1, &draw_buffers[0] );
-
+	gui::any_gl_errors();
 
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
-	
+	gui::any_gl_errors();
+}
+
+
+
+gl::FramebufferObject::~FramebufferObject()
+{
+	if( framebuffer_id )
+	{
+		glDeleteFramebuffers( 1, &framebuffer_id );
+		glDeleteTextures( 1, &texture_id );
+		framebuffer_id = 0;
+		texture_id = 0;
+	}
 }
 
 
@@ -229,7 +257,9 @@ size_t gl::render_text_2d(
 	for( const auto code_point : unicode_str )
 	{
 		// Find or create the character
-		auto c = Globals::font_face_manager.get_character( face, code_point );
+		auto result = Globals::font_face_manager.get_character( face, code_point );
+		auto c = result.first;
+		auto used_face = result.second;
 
 		// Get kerning
 		FT_Vector kerning{0,0};

@@ -2,6 +2,7 @@
 
 #include "gui.hh"
 #include "gui_gl.hh"
+#include "gl_helpers.hh"
 #include "window.hh"
 #include "common_types.hh"
 
@@ -9,11 +10,11 @@ namespace gui
 {
 	void render_unicode(
 		const ShaderProgram &shader,
-		string_unicode text,
-		gui::GuiVec2 position,
-		const gui::Window &window,
+		const string_unicode &text,
+		const gui::GuiVec2 position,
+		const gui::GuiVec2 viewport_size,
 		FT_Face face,
-		glm::vec4 color = glm::vec4{ 1.f },
+		const glm::vec4 color = glm::vec4{ 1.f },
 		float scale = 1.f
 	);
 
@@ -29,24 +30,57 @@ namespace gui
 
 
 	// Get line overflow
-	float get_line_width(
+	GuiVec2 get_text_bounding_box(
+		FT_Face face,
 		string_unicode text,
-		FT_Face face
+		size_t font_size
 	);
+
+
+
+	struct TextTexture
+	{
+		TextTexture(
+			const string_unicode text,
+			const size_t font_size,
+			const GuiVec2 texture_size
+		);
+
+		void set_text( const string_unicode text );
+		void set_font_size( const size_t size );
+		void set_texture_size( const GuiVec2 texture_size );
+		void render( const GuiVec2 position, const GuiVec2 viewport_size ) const;
+		void reset_texture();
+
+
+	  protected:
+		gl::FramebufferObject framebuffer;
+		string_unicode content;
+		size_t font_size;
+		glm::ivec2 texture_size;
+		void update_texture();
+	};
 
 
 
 	struct GuiLabel : GuiElement
 	{
-		string_unicode content;
-		size_t font_size;
 		bool dynamic_font_size;
 
 		GuiLabel( string_unicode text = string_unicode{}, size_t size = 16 );
 		GuiLabel( string_u8 text, size_t size = 16 );
 
 		virtual void render() const override;
+		virtual void handle_event( const GuiEvent &e ) override;
 		virtual GuiVec2 get_minimum_size() const override;
+
+	  protected:
+		string_unicode content;
+		size_t font_size;
+		GuiVec2 content_size;
+		TextTexture text_texture;
+
+		void refresh();
 	};
 
 

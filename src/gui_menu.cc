@@ -72,6 +72,8 @@ void Menu::fit_children()
 
 		child_position_y += child_min_size.h;
 	}
+	
+	size.w = min_size.w;
 }
 
 

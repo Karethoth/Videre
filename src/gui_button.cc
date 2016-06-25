@@ -5,6 +5,11 @@ using namespace std;
 using namespace gui;
 
 
+GuiButton::~GuiButton()
+{
+};
+
+
 void GuiButton::handle_event( const GuiEvent &e )
 {
 	GuiVec2 min_size;

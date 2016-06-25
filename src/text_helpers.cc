@@ -129,24 +129,26 @@ string_unicode u8_to_unicode( const string_u8 &str )
 
 
 
-GlCharacter FontFaceManager::add_character( FT_Face face, unsigned long c )
+pair<GlCharacter, FontFacePtr> FontFaceManager::add_character( FontFacePtr face, unsigned long c )
 {
-	auto glyph_index = FT_Get_Char_Index( face, c );
+	auto glyph_index = FT_Get_Char_Index( face.get(), c );
 
 	// If the glyph wasn't found, try to use the next font face
 	if( !glyph_index )
 	{
-		const auto next_face = get_next_font_face( face );
+		const auto next_face = get_next_font_face( face.get() );
 		if( next_face )
 		{
-			return add_character( next_face.get(), c );
+			return add_character( next_face, c );
 		}
 		
 		// This was the last face and no glyph was found,
 		// continue and render the placeholder glyph
 	}
 
-	auto err = FT_Load_Char( face, c, FT_LOAD_RENDER );
+	auto face_ptr = face.get();
+
+	auto err = FT_Load_Char( face_ptr, c, FT_LOAD_RENDER );
 	if( err )
 	{
 		std::wcout << "ERROR::FREETYTPE: Failed to load Glyph(" << err << ")" << std::endl;
@@ -167,7 +169,7 @@ GlCharacter FontFaceManager::add_character( FT_Face face, unsigned long c )
 	glGenTextures( 1, &texture );
 	if( !texture )
 	{
-		return get_basic_character_info( face, c );
+		return{ { 0 }, nullptr };
 	}
 
 	glBindTexture( GL_TEXTURE_2D, texture );
@@ -183,12 +185,12 @@ GlCharacter FontFaceManager::add_character( FT_Face face, unsigned long c )
 		GL_TEXTURE_2D,
 		0,
 		GL_RED,
-		face->glyph->bitmap.width,
-		face->glyph->bitmap.rows,
+		face_ptr->glyph->bitmap.width,
+		face_ptr->glyph->bitmap.rows,
 		0,
 		GL_RED,
 		GL_UNSIGNED_BYTE,
-		face->glyph->bitmap.buffer
+		face_ptr->glyph->bitmap.buffer
 	);
 	gui::any_gl_errors();
 
@@ -197,25 +199,36 @@ GlCharacter FontFaceManager::add_character( FT_Face face, unsigned long c )
 	// Now store character for later use
 	GlCharacter character = {
 		texture,
-		glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
-		glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
-		(GLuint)face->glyph->advance.x,
-		glyph_index
+		glm::ivec2( face_ptr->glyph->bitmap.width, face_ptr->glyph->bitmap.rows ),
+		glm::ivec2( face_ptr->glyph->bitmap_left, face_ptr->glyph->bitmap_top ),
+		(GLuint)face_ptr->glyph->advance.x,
+		glyph_index,
+		(face_ptr->size->metrics.height)/64
 	};
 
-	font_face_library[FontFaceIdentity( face )].insert( { c, character } );
-	return character;
+	font_face_library[FontFaceIdentity( face_ptr )].insert( { c, character } );
+	return { character, face };
 }
 
 
 
-GlCharacter FontFaceManager::get_character( FT_Face face, unsigned long c )
+pair<GlCharacter, FontFacePtr> FontFaceManager::get_character( FT_Face face, unsigned long c )
 {
 	lock_guard<mutex> font_face_library_lock( font_face_mutex );
+	FontFacePtr passed_face;
+
+	for( auto &font_face : freetype_face_order )
+	{
+		if( font_face.second.get() == face )
+		{
+			passed_face = font_face.second;
+		}
+	}
+
 
 	if( !character_exists( c ) )
 	{
-		return add_character( face, c );
+		return add_character( passed_face, c );
 	}
 
 	// Try with the given font face
@@ -223,7 +236,7 @@ GlCharacter FontFaceManager::get_character( FT_Face face, unsigned long c )
 	auto character_info = font_face_contents.find( c );
 	if( character_info != font_face_contents.end() )
 	{
-		return character_info->second;
+		return { character_info->second, nullptr };
 	}
 
 	// If the given font face didn't have it, loop over all of the font faces
@@ -234,11 +247,11 @@ GlCharacter FontFaceManager::get_character( FT_Face face, unsigned long c )
 		const auto character_info = face_contents.find( c );
 		if( character_info != face_contents.end() )
 		{
-			return character_info->second;
+			return { character_info->second, font_face.second };
 		}
 	}
 
-	return { 0 };
+	return { { 0 }, nullptr };
 }
 
 
@@ -246,8 +259,6 @@ GlCharacter FontFaceManager::get_character( FT_Face face, unsigned long c )
 GlCharacter FontFaceManager::get_basic_character_info( FT_Face face, unsigned long c )
 {
 	auto glyph_index = FT_Get_Char_Index( face, c );
-
-	// If the glyph wasn't found, try to use the next font face
 	if( !glyph_index )
 	{
 		const auto next_face = get_next_font_face( face );
@@ -271,7 +282,8 @@ GlCharacter FontFaceManager::get_basic_character_info( FT_Face face, unsigned lo
 		glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
 		glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
 		(GLuint)face->glyph->advance.x,
-		glyph_index
+		glyph_index,
+		1
 	};
 }
 
@@ -347,24 +359,13 @@ void FontFaceManager::sync_font_face_sizes( size_t font_size )
 
 void FontFaceManager::load_font_faces()
 {
+	clear_glyphs();
+
 	lock_guard<mutex> font_face_library_lock( font_face_mutex );
 
 	// Clear existing font faces
 	freetype_faces.clear();
 	freetype_face_order.clear();
-
-	for( auto& font_faces : font_face_library )
-	{
-		for( auto& font_face : font_faces.second )
-		{
-			if( font_face.second.gl_texture )
-			{
-				glDeleteTextures( 1, &font_face.second.gl_texture );
-			}
-		}
-	}
-
-	font_face_library.clear();
 
 	// Parse fonts from the settings.json to a list
 	vector<std::pair<string_u8, string_u8>> font_list;
@@ -410,4 +411,25 @@ void FontFaceManager::load_font_faces()
 		wcout << "Warning: No fonts loaded. Expect the unexpected behaviour on their part.\n";
 	}
 }
+
+
+
+void FontFaceManager::clear_glyphs()
+{
+	lock_guard<mutex> font_face_library_lock( font_face_mutex );
+
+	for( auto& font_faces : font_face_library )
+	{
+		for( auto& font_face : font_faces.second )
+		{
+			if( font_face.second.gl_texture )
+			{
+				glDeleteTextures( 1, &font_face.second.gl_texture );
+			}
+		}
+	}
+
+	font_face_library.clear();
+}
+
 

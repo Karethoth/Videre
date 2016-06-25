@@ -13,11 +13,11 @@ using namespace gui;
 
 void gui::render_unicode(
 	const ShaderProgram &shader,
-	string_unicode text,
-	gui::GuiVec2 position,
-	const gui::Window &window,
+	const string_unicode &text,
+	const gui::GuiVec2 position,
+	const gui::GuiVec2 viewport_size,
 	FT_Face face,
-	glm::vec4 color,
+	const glm::vec4 color,
 	float scale )
 {
 	// OpenGL vertex array and buffer objects for text rendering
@@ -44,11 +44,9 @@ void gui::render_unicode(
 		gui::any_gl_errors();
 	}
 
-	const auto window_size = window.size;
-
 	const auto projection = glm::ortho<float>(
-		0, tools::int_to_float(window_size.x),
-		0, tools::int_to_float(window_size.y)
+		0, tools::int_to_float(viewport_size.w),
+		0, tools::int_to_float(viewport_size.h)
 	);
 
 	const auto tex_uniform = shader.get_uniform( "tex" );
@@ -72,7 +70,14 @@ void gui::render_unicode(
 
 	for( auto c : text )
 	{
-		auto current_character = Globals::font_face_manager.get_character( face, c );
+		auto result = Globals::font_face_manager.get_character( face, c );
+		auto current_character = result.first;
+		auto used_face = result.second;
+		auto face_ptr = used_face.get();
+		if( !face_ptr )
+		{
+			face_ptr = face;
+		}
 
 		// Get kerning
 		FT_Vector kerning{0,0};
@@ -91,10 +96,10 @@ void gui::render_unicode(
 		}
 
 		// Render
-		const auto y_adjust = current_character.size.y - current_character.bearing.y;
 		const auto x_adjust = current_character.bearing.x;
-		const GLfloat pos_x = caret_pos_x * scale + kerning.x + x_adjust;
-		const GLfloat pos_y = tools::int_to_float( position.y + kerning.y - y_adjust );
+		const auto y_adjust = current_character.size.y - current_character.bearing.y - kerning.y - current_character.font_height/4;
+		const GLfloat pos_x = caret_pos_x * scale + face_ptr->glyph->bitmap_left;
+		const GLfloat pos_y = tools::int_to_float( position.y - y_adjust );
 		const GLfloat w = current_character.size.x * scale;
 		const GLfloat h = current_character.size.y * scale;
 
@@ -122,6 +127,7 @@ void gui::render_unicode(
 }
 
 
+
 string_unicode gui::get_line_overflow(
 	string_unicode text,
 	float line_width,
@@ -132,17 +138,27 @@ string_unicode gui::get_line_overflow(
 }
 
 
-float gui::get_line_width(
+
+GuiVec2 gui::get_text_bounding_box(
+	FT_Face face,
 	string_unicode text,
-	FT_Face face
+	size_t font_size
 )
 {
 	float width = 0;
+	float height = 0;
+
+
+	Globals::font_face_manager.sync_font_face_sizes( font_size );
 
 	GlCharacter previous_character{};
 	for( auto c : text )
 	{
-		auto current_character = Globals::font_face_manager.get_character( face, c );
+		auto result = Globals::font_face_manager.get_character( face, c );
+		auto current_character = result.first;
+		auto used_face = result.second;
+
+		height = max( height, current_character.font_height );
 
 		// Get kerning
 		FT_Vector kerning{0,0};
@@ -162,7 +178,155 @@ float gui::get_line_width(
 		width += kerning.x + (current_character.advance >> 6);
 	}
 
-	return width;
+
+	return { tools::float_to_int(width), tools::float_to_int(height) };
+}
+
+
+
+TextTexture::TextTexture( string_unicode text, size_t font_size, GuiVec2 texture_size )
+: content(text),
+  font_size(font_size),
+  texture_size(texture_size.w, texture_size.h)
+{
+	if( !texture_size.x || !texture_size.y )
+	{
+		return;
+	}
+
+	reset_texture();
+}
+
+
+
+void TextTexture::set_text( const string_unicode text )
+{
+	content = text;
+}
+
+
+
+void TextTexture::set_font_size( const size_t size )
+{
+	font_size = size;
+}
+
+
+
+void TextTexture::set_texture_size( const GuiVec2 size )
+{
+	texture_size = { size.w, size.h };
+}
+
+
+
+void TextTexture::reset_texture()
+{
+	framebuffer.resize( texture_size );
+	update_texture();
+}
+
+
+
+void TextTexture::update_texture()
+{
+	auto shader = Globals::shaders.find( "2d" );
+	if( shader == Globals::shaders.end() )
+	{
+		return;
+	}
+
+	auto font_face = Globals::font_face_manager.get_default_font_face();
+
+	framebuffer.bind();
+	render_unicode(
+		shader->second,
+		content,
+		{ 0, 0 },
+		{ texture_size.x, texture_size.y },
+		font_face.get(),
+		{ 1.f, 1.f, 1.f, 1.f },
+		1.f
+	);
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
+
+
+
+void TextTexture::render( const GuiVec2 position, const GuiVec2 viewport_size ) const
+{
+	auto shader = Globals::shaders.find( "2d" );
+	if( shader == Globals::shaders.end() )
+	{
+		return;
+	}
+
+	glUseProgram( shader->second.program );
+
+	static GLuint vao;
+	static GLuint vbo;
+
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	any_gl_errors();
+
+	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	if( !vao )
+	{
+		glGenVertexArrays( 1, &vao );
+		glGenBuffers( 1, &vbo );
+		glBindVertexArray( vao );
+		glBindBuffer( GL_ARRAY_BUFFER, vbo );
+		glBufferData( GL_ARRAY_BUFFER, sizeof( GLfloat ) * 6 * 4, nullptr, GL_DYNAMIC_DRAW );
+		glEnableVertexAttribArray( 0 );
+		glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof( GLfloat ), 0 );
+		glBindBuffer( GL_ARRAY_BUFFER, 0 );
+		glBindVertexArray( 0 );
+		gui::any_gl_errors();
+	}
+
+	const auto projection = glm::ortho<float>(
+		0, tools::int_to_float(viewport_size.w),
+		tools::int_to_float(viewport_size.h), 0
+	);
+
+	const auto tex_uniform = shader->second.get_uniform( "tex" );
+	const auto mp_uniform = shader->second.get_uniform( "MP" );
+	const auto color_uniform = shader->second.get_uniform( "color" );
+	const auto textured_uniform = shader->second.get_uniform( "textured" );
+
+	glUniformMatrix4fv( mp_uniform, 1, 0, &projection[0][0] );
+	glUniform4f( color_uniform, 1.f, 1.f, 1.f, 1.f );
+	glUniform1i( textured_uniform, 1 );
+	glUniform1i( tex_uniform, 0 );
+	any_gl_errors();
+
+	glBindVertexArray( vao );
+	glBindBuffer( GL_ARRAY_BUFFER, vbo );
+	any_gl_errors();
+
+	const auto pos_x = position.x;
+	const auto pos_y = viewport_size.h - position.y - texture_size.y;
+	const auto w = texture_size.x;
+	const auto h = texture_size.y;
+
+	const GLfloat vertices[6][4] = {
+		{ pos_x,     pos_y + h, 0.0, 0.0 },
+		{ pos_x,     pos_y,     0.0, 1.0 },
+		{ pos_x + w, pos_y,     1.0, 1.0 },
+
+		{ pos_x,     pos_y + h, 0.0, 0.0 },
+		{ pos_x + w, pos_y,     1.0, 1.0 },
+		{ pos_x + w, pos_y + h, 1.0, 0.0 }
+	};
+
+	glBindTexture( GL_TEXTURE_2D, framebuffer.texture_id );
+
+	glBufferSubData( GL_ARRAY_BUFFER, 0, sizeof( vertices ), &vertices[0][0] );
+	gui::any_gl_errors();
+
+	glDrawArrays( GL_TRIANGLES, 0, 6 );
 }
 
 
@@ -170,17 +334,23 @@ float gui::get_line_width(
 GuiLabel::GuiLabel( string_unicode text, size_t size )
 : content(text),
   font_size(size),
-  dynamic_font_size(false)
+  content_size(0, 0),
+  dynamic_font_size(false),
+  text_texture(text, size, get_minimum_size())
 {
+	//refresh();
 }
 
 
 
 GuiLabel::GuiLabel( string_u8 text, size_t size )
-: content(u8_to_unicode(text)),
-  font_size(size),
+: content(u8_to_unicode( text )),
+  font_size(size ),
+  content_size(0, 0),
+  text_texture(content, size, {get_minimum_size()}),
   dynamic_font_size(false)
 {
+	//refresh();
 }
 
 
@@ -220,12 +390,12 @@ void GuiLabel::render() const
 
 		Globals::font_face_manager.sync_font_face_sizes( used_font_size );
 
-		auto cursor_pos = GuiVec2(
-			static_cast<int>(pos.x + padding.x),
-			static_cast<int>(window->size.h - pos.y - padding.y - used_font_size)
-		);
+		GuiVec2 text_position{
+			tools::float_to_int( pos.x + padding.x ),
+			tools::float_to_int( window->size.h - pos.y - content_size.h - padding.y )
+		};
 
-		render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
+		text_texture.render( text_position, window->size );
 	}
 	catch( runtime_error &e )
 	{
@@ -235,49 +405,78 @@ void GuiLabel::render() const
 
 
 
+void GuiLabel::handle_event( const GuiEvent &e )
+{
+	GuiElement::handle_event( e );
+
+	if( e.type == RESIZE )
+	{
+		const auto padding = style.get( style_state ).padding;
+		auto min_size = get_minimum_size();
+		min_size.w -= padding.x + padding.z;
+		min_size.h -= padding.y + padding.w;
+		text_texture.set_texture_size( min_size );
+		refresh();
+	}
+	else if( e.type == REFRESH_RESOURCES )
+	{
+		refresh();
+	}
+}
+
+
+
+void GuiLabel::refresh()
+{
+	const auto font_face = Globals::font_face_manager.get_default_font_face();
+
+	auto used_font_size = font_size;
+	if( dynamic_font_size )
+	{
+		lock_guard<mutex> settings_lock( settings::settings_mutex );
+		auto settings_font_size = settings::core["font_size"].get<int>();
+		if( settings_font_size > 0 )
+		{
+			used_font_size = settings_font_size;
+		}
+	}
+
+	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
+	text_texture.reset_texture();
+	content_size = get_text_bounding_box( font_face.get(), content, used_font_size );
+}
+
+
+
 GuiVec2 GuiLabel::get_minimum_size() const
 {
 	const auto padding = style.get( style_state ).padding;
-	try
+	const auto padding_w = padding.x + padding.z;
+	const auto padding_h = padding.y + padding.w;
+
+	if( content.size() && (!content_size.x || !content_size.y) )
 	{
-		const auto font_face = Globals::font_face_manager.get_default_font_face();
-
-		auto used_font_size = font_size;
-		if( dynamic_font_size )
-		{
-			lock_guard<mutex> settings_lock( settings::settings_mutex );
-			auto settings_font_size = settings::core["font_size"].get<int>();
-			if( settings_font_size > 0 )
-			{
-				used_font_size = settings_font_size;
-			}
-		}
-
-		Globals::font_face_manager.sync_font_face_sizes( used_font_size );
-
-		// Font size and the height required don't scale 1 to 1,
-		// adjust the height a bit depending on the font size
-		const auto font_height_multiplier =
-			used_font_size < 16 ? 1.0f :
-			used_font_size < 24 ? 1.1f : 1.2f;
-
-		const auto min_size = GuiVec2(
-			static_cast<int>(get_line_width( content, font_face.get() ) + padding.x + padding.z),
-			static_cast<int>(used_font_size * font_height_multiplier + padding.y + padding.w)
+		auto face = Globals::font_face_manager.get_default_font_face();
+		const auto content_rect = get_text_bounding_box(
+			face.get(),
+			content,
+			font_size
 		);
 
-		return min_size;
-	}
-	catch( runtime_error &e )
-	{
-		wcout << "GuiLabel::get_minimum_size failed: " << e.what() << "\n";
+		const auto fresh_min_size = GuiVec2(
+			static_cast<int>(content_rect.w + padding_w),
+			static_cast<int>(content_rect.h + padding_h)
+		);
+
+		return fresh_min_size;
 	}
 
-	// In case of an exception, just return
-	return GuiVec2(
-		tools::float_to_int( padding.x + padding.z ),
-		tools::float_to_int( padding.y + padding.w )
+	const auto min_size = GuiVec2(
+		static_cast<int>(content_size.w + padding_w),
+		static_cast<int>(content_size.h + padding_w)
 	);
+
+	return min_size;
 };
 
 
@@ -322,7 +521,7 @@ void GuiTextField::render() const
 			tools::float_to_int( window->size.h - pos.y - padding.y - used_font_size )
 		);
 
-		render_unicode( shader->second, content, cursor_pos, *window, font_face.get(), color );
+		render_unicode( shader->second, content, cursor_pos, window->size, font_face.get(), color );
 	}
 	catch( runtime_error &e )
 	{
@@ -376,7 +575,7 @@ void GuiTextArea::render() const
 			return;
 		}
 
-		render_unicode( shader->second, content, cursor_pos, *window, font_face.get() );
+		render_unicode( shader->second, content, cursor_pos, window->size, font_face.get() );
 	}
 	catch( runtime_error &e )
 	{

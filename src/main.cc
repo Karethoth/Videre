@@ -343,7 +343,6 @@ int main( int argc, char **argv )
 
 
 	// Set up the GUI
-
 	auto split_layout = make_shared<gui::SplitLayout>();
 	split_layout->create_children = [] {
 		return gui::GuiElementPtrPair(
@@ -370,6 +369,20 @@ int main( int argc, char **argv )
 
 	auto settings_updater_waiter = tools::make_defer( [&] { settings_updater.join(); } );
 
+
+	// Clear glyphs and tell resources to refresh their resources.
+	// Some glyphs are bad at this point
+	Globals::font_face_manager.clear_glyphs();
+	gui::GuiEvent refresh_event{};
+	refresh_event.type = gui::GuiEventType::REFRESH_RESOURCES;
+
+	{
+		lock_guard<mutex> windows_lock( Globals::windows_mutex );
+		for( auto &window : Globals::windows )
+		{
+			window.handle_event( refresh_event );
+		}
+	}
 
 	/* Main loop */
 	SDL_Event event{};

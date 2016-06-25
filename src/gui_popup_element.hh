@@ -5,6 +5,7 @@
 
 namespace gui
 {
+
 struct PopupElement : GuiElement
 {
 	GuiVec2 target_pos;
@@ -31,11 +32,13 @@ struct PopupElementHandleHelper
 };
 
 
+
 // Context for elements within popups
 // - Used by few buttons at the moment
 struct PopupElementContext
 {
 	PopupElement *popup;
 };
+
 }
 

@@ -269,6 +269,7 @@ void Window::render() const
 		return;
 	}
 
+	glViewport( 0, 0, size.w, size.h );
 	glClearColor( 0.2f, 0.2f, 0.2f, 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT );
 
@@ -315,6 +316,7 @@ void Window::handle_event( const GuiEvent &e )
 			SDL_SetWindowSize( window.get(), size_fix.w, size_fix.h );
 			return;
 		}
+
 	}
 
 	sync_popups();

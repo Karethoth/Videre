@@ -14,10 +14,11 @@ namespace gl
 	{
 		GLuint     framebuffer_id=0;
 		GLuint     texture_id=0;
-		glm::ivec2 texture_size={0,0};
+		glm::ivec2 texture_size={0, 0};
 
 		void bind();
 		void resize( const glm::ivec2 size );
+		~FramebufferObject();
 	};
 
 
@@ -49,13 +50,6 @@ namespace gl
 		glm::vec2 scale,
 		FT_Face face,
 		size_t font_size
-	);
-
-
-
-	glm::vec2 get_text_bounding_box(
-		const string_u8 &text,
-		FT_Face face
 	);
 }
 

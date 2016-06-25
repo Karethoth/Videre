@@ -8,6 +8,13 @@ using namespace gui;
 void PopupElement::handle_event( const GuiEvent &e )
 {
 	GuiElement::handle_event( e );
+
+	if( e.type == RESIZE )
+	{
+		auto min_size = get_minimum_size();
+		size.w = min_size.w;
+		size.h = min_size.h;
+	}
 }
 
 

@@ -161,7 +161,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	auto menu = make_shared<Menu>();
 
 	// Create a test button
-	const auto label_padding = glm::vec4( 6.f, 4.f, 8.f, 8.f );
+	const auto label_padding = glm::vec4( 6.f, 6.f, 6.f, 6.f );
 
 	auto button1 = make_shared<GuiContextButton<PopupElementContext>>();
 	button1->context.popup = popup_menu.get();
@@ -236,7 +236,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	};
 	
 	auto button2_label = make_shared<GuiLabel>(
-		u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0_abcdefghijklmnopqrstuvwxyz" )
+		u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0" )
 	);
 
 	button2_label->dynamic_font_size = true;
@@ -453,7 +453,7 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 		u8_to_unicode( "Test" ),
 		16
 	);
-	auto label_padding = glm::vec4( 8, 4, 8, 8 );
+	auto label_padding = glm::vec4( 8, 8, 4, 8 );
 	button_label->style.normal.color_text = glm::vec4{ 0.8f };
 	button_label->style.hover.color_text  = glm::vec4{ 1.f };
 	button_label->style.normal.padding = label_padding;
@@ -488,8 +488,8 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 		);
 		label->style.normal.color_text = { 1.0, 1.0, 1.0, 0.4 };
 		label->style.hover.color_text  = { 1.0, 1.0, 1.0, 0.5 };
-		label->style.normal.padding    = { 6, 4, 8, 8 };
-		label->style.hover.padding     = { 6, 4, 8, 8 };
+		label->style.normal.padding    = { 6, 8, 8, 8 };
+		label->style.hover.padding     = { 6, 8, 8, 8 };
 		label->dynamic_font_size       = true;
 		popup_menu->add_child( label );
 		popup_menu->parent = window;
@@ -523,9 +523,9 @@ void VectorGraphicsToolbar::handle_event( const GuiEvent &e )
 	else
 	{
 		GuiElement::handle_event( e );
-
 	}
 }
+
 
 
 void VectorGraphicsToolbar::fit_children()

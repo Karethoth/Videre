@@ -30,6 +30,7 @@ struct GlCharacter
 	glm::ivec2 bearing;
 	GLuint     advance;
 	FT_UInt    glyph;
+	GLuint     font_height;
 };
 
 
