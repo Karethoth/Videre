@@ -359,20 +359,20 @@ int main( int argc, char **argv )
 
 
 	// Set up the GUI
-	auto split_layout = make_shared<gui::SplitLayout>();
-	split_layout->create_children = []
 	{
-		return gui::GuiElementPtrPair(
-			make_shared<VectorGraphicsEditor>(),
-			make_shared<gui::SplitLayout>()
-		);
-	};
+		auto split_layout = make_shared<gui::SplitLayout>();
+		split_layout->create_children = []
+		{
+			return gui::GuiElementPtrPair(
+				make_shared<VectorGraphicsEditor>(),
+				make_shared<gui::SplitLayout>()
+			);
+		};
 
-	Globals::windows[0].add_child( split_layout );
-	split_layout->split_at( gui::SplitAxis::VERTICAL, Globals::windows[0].size.w / 2 );
-	split_layout->split_bar.is_locked = false;
-
-	gui::any_gl_errors();
+		Globals::windows[0].add_child( split_layout );
+		split_layout->split_at( gui::SplitAxis::VERTICAL, Globals::windows[0].size.w / 2 );
+		split_layout->split_bar.is_locked = false;
+	}
 
 	// Clear glyphs and tell resources to refresh their resources.
 	// Some glyphs are bad at this point
@@ -394,14 +394,14 @@ int main( int argc, char **argv )
 	auto settings_file_next_check = chrono::steady_clock::now() + chrono::milliseconds( 1000 );
 	auto settings_file_timestamp = tools::file_modified( settings_file_path );
 
-	auto next_frame = chrono::system_clock::now();
-
 	// FPS - average over 10 frames
 	const auto fps_step_count = 10;
 	const auto fps_cap = 60;
 	auto fps_start_time = chrono::system_clock::now();
 	auto fps_frames_left = fps_step_count;
 	float fps = 1.f;
+
+	auto next_frame = chrono::system_clock::now();
 
 	while( !Globals::should_quit )
 	{

@@ -46,8 +46,8 @@ void GlElement::render() const
 bool gui::any_gl_errors()
 {
 	bool had_error = false;
-	GLenum err;
-	while( (err = glGetError()) != GL_NO_ERROR )
+	GLenum err = glGetError();
+	if( err != GL_NO_ERROR )
 	{
 		had_error = true;
 		std::wcout << "gl_error: " << err << std::endl;
