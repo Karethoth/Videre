@@ -24,6 +24,12 @@ GridLayout::GridLayout( size_t _columns, size_t _rows )
 
 
 
+GridLayout::~GridLayout()
+{
+}
+
+
+
 void GridLayout::handle_event( const GuiEvent &e )
 {
 	switch( e.type )
@@ -244,6 +250,12 @@ GuiVec2 GridLayout::get_minimum_size() const
 		}
 	}
 	return minimum_size;
+}
+
+
+
+SplitLayout::~SplitLayout()
+{
 }
 
 

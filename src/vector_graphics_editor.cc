@@ -509,6 +509,24 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 
 	button->add_child( button_label );
 	add_child( button );
+
+
+	// Text input test
+	auto input_field = make_shared<GuiTextField>();
+	const auto input_field_padding = glm::vec4( 8, 8, 8, 8 );
+	const auto color_bg   = glm::vec4( 0.2f, 1.0f, 0.5f, 0.8f );
+	const auto color_text = glm::vec4( 0.0f, 0.0f, 0.0f, 1.0f );
+	input_field->style.normal.padding = input_field_padding;
+	input_field->style.hover.padding = input_field_padding;
+	input_field->style.normal.color_bg = color_bg;
+	input_field->style.hover.color_bg = color_bg;
+	input_field->style.normal.color_text = color_text;
+	input_field->style.hover.color_text = color_text;
+	input_field->dynamic_font_size = false;
+	input_field->max_characters = 16;
+	input_field->size.w = 200;
+	input_field->set_font_size( 16 );
+	add_child( input_field );
 }
 
 

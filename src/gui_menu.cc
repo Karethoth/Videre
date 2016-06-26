@@ -8,6 +8,12 @@ using namespace std;
 using namespace gui;
 
 
+Menu::~Menu()
+{
+}
+
+
+
 void Menu::render() const
 {
 	GuiElement::render();

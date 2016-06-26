@@ -16,7 +16,6 @@ class Window : public GuiElement
 	uint32_t          sdl_id; // SDL Window Id
 	bool              closed;
 	SDL_GLContext     gl_context;
-	GuiElementPtr     active_element; // What element is active / has focus
 
 	Window();
 	virtual ~Window();
@@ -31,8 +30,8 @@ class Window : public GuiElement
 
 	bool is_initialized() const;
 	void handle_sdl_event( const SDL_Event &e );
-	void update();
 
+	virtual void update() override;
 	virtual void render() const override;
 	virtual void handle_event( const gui::GuiEvent &e ) override;
 

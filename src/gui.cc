@@ -157,6 +157,15 @@ void GuiElement::init_child( GuiElement *child )
 
 
 
+void GuiElement::update()
+{
+	for( auto& child : children )
+	{
+		child->update();
+	}
+}
+
+
 void GuiElement::render() const
 {
 	const auto color_bg = style.get( style_state ).color_bg;

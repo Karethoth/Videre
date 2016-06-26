@@ -5,6 +5,12 @@ using namespace std;
 using namespace gui;
 
 
+PopupElement::~PopupElement()
+{
+}
+
+
+
 void PopupElement::handle_event( const GuiEvent &e )
 {
 	GuiElement::handle_event( e );

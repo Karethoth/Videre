@@ -51,14 +51,6 @@ void handle_sdl_event( const SDL_Event &e )
 		{
 			Globals::should_quit = true;
 		}
-
-		else if( e.type == SDL_KEYDOWN )
-		{
-			if( e.key.keysym.sym == SDLK_ESCAPE )
-			{
-				Globals::should_quit = true;
-			}
-		}
 		else
 		{
 			auto window_id = sdl2::event_window_id( e );
@@ -387,6 +379,9 @@ int main( int argc, char **argv )
 			window.handle_event( refresh_event );
 		}
 	}
+
+
+	//SDL_StartTextInput();
 
 	// Settings file checks
 	const auto settings_file_path = string{ "settings.json" };

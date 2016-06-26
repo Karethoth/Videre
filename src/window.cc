@@ -25,7 +25,6 @@ using namespace gui;
 Window::Window()
 : closed(false),
   sdl_id(0),
-  active_element(nullptr),
   gl_context( 0 )
 {
 	pos = { 0, 0 };
@@ -239,13 +238,36 @@ void Window::handle_sdl_event( const SDL_Event &e )
 			break;
 
 		case SDL_TEXTINPUT:
-			wcout << "TEXT: " << &e.text.text[0] << endl;
+			gui_event.type = TEXT_INPUT;
+			strncpy_s(
+				gui_event.text_input.text,
+				sizeof gui_event.text_input.text,
+				e.text.text,
+				sizeof gui_event.text_input.text
+			);
+			handle_event( gui_event );
 			break;
 
 		case SDL_TEXTEDITING:
-			SDL_Rect rect = { 100, 100, 200, 200 };
-			SDL_SetTextInputRect( &rect );
-			wcout << "EDITING: " << &e.edit.text[0] << endl;
+			gui_event.type = TEXT_EDIT;
+			strncpy_s(
+				gui_event.text_edit.text,
+				sizeof gui_event.text_input.text,
+				e.text.text,
+				sizeof gui_event.text_edit.text
+			);
+			gui_event.text_edit.start = e.edit.start;
+			gui_event.text_edit.length = e.edit.length;
+			handle_event( gui_event );
+			break;
+
+		case SDL_KEYUP:
+		case SDL_KEYDOWN:
+			gui_event.type = KEY;
+			gui_event.key.state = e.key.state == SDL_PRESSED ? PRESSED : RELEASED;
+			gui_event.key.button = e.key.keysym;
+			gui_event.key.is_repeat = e.key.repeat;
+			handle_event( gui_event );
 			break;
 	}
 }
@@ -255,6 +277,7 @@ void Window::handle_sdl_event( const SDL_Event &e )
 void Window::update()
 {
 	sync_popups();
+	GuiElement::update();
 }
 
 

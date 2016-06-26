@@ -155,7 +155,6 @@ pair<GlCharacter, FontFacePtr> FontFaceManager::add_character( FontFacePtr face,
 		return {};
 	}
 
-
 	auto shader = Globals::shaders.find( "2d" );
 	if( shader == Globals::shaders.end() )
 	{
@@ -172,7 +171,7 @@ pair<GlCharacter, FontFacePtr> FontFaceManager::add_character( FontFacePtr face,
 	if( !texture )
 	{
 		gui::any_gl_errors();
-		return{ { 0 }, nullptr };
+		return{ {}, nullptr };
 	}
 
 	glBindTexture( GL_TEXTURE_2D, texture );
@@ -201,14 +200,13 @@ pair<GlCharacter, FontFacePtr> FontFaceManager::add_character( FontFacePtr face,
 	gui::any_gl_errors();
 
 	// Now store character for later use
-	GlCharacter character = {
-		texture,
-		glm::ivec2( face_ptr->glyph->bitmap.width, face_ptr->glyph->bitmap.rows ),
-		glm::ivec2( face_ptr->glyph->bitmap_left, face_ptr->glyph->bitmap_top ),
-		(GLuint)face_ptr->glyph->advance.x,
-		glyph_index,
-		(face_ptr->size->metrics.height)/64
-	};
+	GlCharacter character = {};
+	character.gl_texture = texture;
+	character.size = glm::ivec2( face_ptr->glyph->bitmap.width, face_ptr->glyph->bitmap.rows );
+	character.bearing = glm::ivec2( face_ptr->glyph->bitmap_left, face_ptr->glyph->bitmap_top );
+	character.advance = (GLuint)face_ptr->glyph->advance.x;
+	character.glyph = glyph_index;
+	character.font_height = (face_ptr->size->metrics.height) / 64;
 
 	font_face_library[FontFaceIdentity( face_ptr )].insert( { c, character } );
 	return { character, face };
@@ -255,7 +253,7 @@ pair<GlCharacter, FontFacePtr> FontFaceManager::get_character( FT_Face face, uns
 		}
 	}
 
-	return { { 0 }, nullptr };
+	return { {}, nullptr };
 }
 
 
@@ -281,7 +279,8 @@ GlCharacter FontFaceManager::get_basic_character_info( FT_Face face, unsigned lo
 		throw runtime_error( "FT_Load_Char failed for code point " + to_string( c ) );
 	}
 
-	return {
+	return{};
+	/* Not needed now
 		0,
 		glm::ivec2( face->glyph->bitmap.width, face->glyph->bitmap.rows ),
 		glm::ivec2( face->glyph->bitmap_left, face->glyph->bitmap_top ),
@@ -289,6 +288,7 @@ GlCharacter FontFaceManager::get_basic_character_info( FT_Face face, unsigned lo
 		glyph_index,
 		1
 	};
+	*/
 }
 
 

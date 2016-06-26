@@ -22,7 +22,8 @@ enum GuiEventType
 	MOUSE_BUTTON, MOUSE_SCROLL, MOUSE_MOVE, MOUSE_DRAG, MOUSE_DRAG_END, MOUSE_DOUBLE_CLICK,
 	MOUSE_ENTER, MOUSE_LEAVE,
 	WINDOW_BLUR, WINDOW_FOCUS,
-	REFRESH_RESOURCES
+	REFRESH_RESOURCES,
+	TEXT_INPUT, TEXT_EDIT, KEY
 };
 
 
@@ -85,8 +86,7 @@ struct GuiEvent
 
 		struct
 		{
-			GuiVec2        pos;
-			GuiButtonState state;
+			GuiVec2        pos; GuiButtonState state;
 			int            button;
 		} mouse_button;
 
@@ -121,6 +121,25 @@ struct GuiEvent
 			GuiVec2 pos;
 			int     button;
 		} mouse_double_click;
+
+		struct
+		{
+			char text[32];
+		} text_input;
+
+		struct
+		{
+			char text[32];
+			int  start;
+			int  length;
+		} text_edit;
+
+		struct
+		{
+			GuiButtonState state;
+			SDL_Keysym     button;
+			bool           is_repeat;
+		} key;
 	};
 
 	GuiEvent() : type(GuiEventType::NO_EVENT) {};
@@ -196,6 +215,7 @@ struct GuiElement
 
 	virtual GuiVec2 get_minimum_size() const;
 
+	virtual void update();
 	virtual void render() const;
 	virtual void handle_event( const GuiEvent &e );
 	virtual const GuiElement *get_root() const;

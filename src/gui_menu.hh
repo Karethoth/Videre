@@ -5,6 +5,8 @@ namespace gui
 {
 struct Menu : GuiElement
 {
+	virtual ~Menu();
+
 	virtual void render() const override;
 	virtual void handle_event( const GuiEvent &e ) override;
 	virtual void add_child( GuiElementPtr child ) override;

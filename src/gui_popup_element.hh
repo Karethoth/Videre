@@ -14,6 +14,8 @@ struct PopupElement : GuiElement
 	//       would be used to identify them.
 	//       - Creator GuiElement should be fine
 
+	virtual ~PopupElement();
+
 	virtual void handle_event( const GuiEvent &e ) override;
 	virtual void render() const override;
 };

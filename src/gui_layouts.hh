@@ -27,6 +27,7 @@ struct GridLayout : GuiElement
 	std::vector<GuiPixelsOrPercentage> row_heights;
 
 	GridLayout( size_t _rows = 1, size_t _columns = 1 );
+	virtual ~GridLayout();
 
 	virtual void handle_event( const GuiEvent &e ) override;
 	virtual void render() const override;
@@ -72,6 +73,8 @@ struct SplitLayout : GuiElement
 		bool is_dragged   = false;
 		bool is_locked    = false;
 	} split_bar;
+
+	virtual ~SplitLayout();
 
 	virtual void handle_event( const GuiEvent &e ) override;
 	virtual void render() const override;
