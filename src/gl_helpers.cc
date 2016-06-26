@@ -20,6 +20,7 @@ void gl::FramebufferObject::bind()
 
 	glBindFramebuffer( GL_FRAMEBUFFER, framebuffer_id );
 	glViewport( 0, 0, texture_size.x, texture_size.y );
+	gui::any_gl_errors();
 }
 
 
@@ -27,6 +28,10 @@ void gl::FramebufferObject::bind()
 void gl::FramebufferObject::resize( const glm::ivec2 size )
 {
 	texture_size = size;
+	if( !texture_size.x || !texture_size.y )
+	{
+		return;
+	}
 
 	auto shader = Globals::shaders.find( "2d" );
 	if( shader == Globals::shaders.end() )
@@ -85,6 +90,7 @@ gl::FramebufferObject::~FramebufferObject()
 		glDeleteTextures( 1, &texture_id );
 		framebuffer_id = 0;
 		texture_id = 0;
+		gui::any_gl_errors();
 	}
 }
 
@@ -154,6 +160,7 @@ void gl::render_line_2d(
 	
 	glDrawArrays( GL_LINES, 0, line.vertex_count );
 	glBindVertexArray( 0 );
+	gui::any_gl_errors();
 }
 
 
@@ -194,6 +201,7 @@ void gl::render_quad_2d( const ShaderProgram &shader, const glm::vec2 &window_si
 	
 	glDrawArrays( GL_TRIANGLES, 0, quad.vertex_count );
 	glBindVertexArray( 0 );
+	gui::any_gl_errors();
 }
 
 
@@ -308,6 +316,7 @@ size_t gl::render_text_2d(
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindTexture( GL_TEXTURE_2D, 0 );
 	glBindVertexArray( 0 );
+	gui::any_gl_errors();
 
 	return static_cast<size_t>( caret_pos_x - pos.x );
 }

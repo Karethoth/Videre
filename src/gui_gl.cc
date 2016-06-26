@@ -32,6 +32,7 @@ GlElement::~GlElement()
 }
 
 
+
 void GlElement::render() const
 {
 	for( auto& child : children )
@@ -39,6 +40,7 @@ void GlElement::render() const
 		child->render();
 	}
 }
+
 
 
 bool gui::any_gl_errors()
@@ -52,6 +54,7 @@ bool gui::any_gl_errors()
 	}
 	return had_error;
 }
+
 
 
 void gui::clear_gl_errors()

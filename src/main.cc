@@ -284,13 +284,28 @@ void apply_settings()
 	// to fit around their children
 
 	// TODO: Check if a change actually happened
+
+	gui::GuiEvent refresh_event{};
+	refresh_event.type = gui::GuiEventType::REFRESH_RESOURCES;
+	gui::any_gl_errors();
 	for( auto& window : Globals::windows )
 	{
 		gui::GuiEvent resize_event;
 		resize_event.type = gui::GuiEventType::RESIZE;
 		resize_event.resize.size = window.size;
+		gui::any_gl_errors();
+		window.handle_event( refresh_event );
+		gui::any_gl_errors();
 		window.handle_event( resize_event );
 	}
+}
+
+
+
+void reload_settings()
+{
+	load_settings();
+	apply_settings();
 }
 
 
@@ -299,17 +314,17 @@ int main( int argc, char **argv )
 {
 	srand( time( 0 ) );
 
-	#ifdef  _DEBUG
+#ifdef  _DEBUG
 	auto defer_enter_to_quit = tools::make_defer( []()
 	{
 		wcout << endl << "Press enter to quit... ";
 		cin.ignore();
 	} );
-	#endif
+#endif
 
-	#ifdef _WIN32
+#ifdef _WIN32
 	int const newMode = _setmode( _fileno( stdout ), _O_U8TEXT );
-	#endif
+#endif
 
 	try
 	{
@@ -324,7 +339,8 @@ int main( int argc, char **argv )
 		return 1;
 	}
 
-	auto defer_sdl_quit = tools::make_defer( [](){
+	auto defer_sdl_quit = tools::make_defer( []()
+	{
 		SDL_Quit();
 	} );
 
@@ -335,16 +351,17 @@ int main( int argc, char **argv )
 	} );
 
 
-	#ifdef  _WIN32
-	#ifndef _DEBUG
+#ifdef  _WIN32
+#ifndef _DEBUG
 	FreeConsole();
-	#endif
-	#endif
+#endif
+#endif
 
 
 	// Set up the GUI
 	auto split_layout = make_shared<gui::SplitLayout>();
-	split_layout->create_children = [] {
+	split_layout->create_children = []
+	{
 		return gui::GuiElementPtrPair(
 			make_shared<VectorGraphicsEditor>(),
 			make_shared<gui::SplitLayout>()
@@ -355,20 +372,7 @@ int main( int argc, char **argv )
 	split_layout->split_at( gui::SplitAxis::VERTICAL, Globals::windows[0].size.w / 2 );
 	split_layout->split_bar.is_locked = false;
 
-
-	// Start the auto updater
-	auto settings_updater = tools::run_when_file_updated(
-		"settings.json",
-		[]() {
-			load_settings();
-			apply_settings();
-		},
-		Globals::should_quit,
-		chrono::milliseconds( 1000 )
-	);
-
-	auto settings_updater_waiter = tools::make_defer( [&] { settings_updater.join(); } );
-
+	gui::any_gl_errors();
 
 	// Clear glyphs and tell resources to refresh their resources.
 	// Some glyphs are bad at this point
@@ -384,8 +388,11 @@ int main( int argc, char **argv )
 		}
 	}
 
-	/* Main loop */
-	SDL_Event event{};
+	// Settings file checks
+	const auto settings_file_path = string{ "settings.json" };
+	const auto settings_file_check_interval = chrono::milliseconds( 1000 );
+	auto settings_file_next_check = chrono::steady_clock::now() + chrono::milliseconds( 1000 );
+	auto settings_file_timestamp = tools::file_modified( settings_file_path );
 
 	auto next_frame = chrono::system_clock::now();
 
@@ -423,12 +430,26 @@ int main( int argc, char **argv )
 			fps = 1.f / (milliseconds / fps_step_count / 1000.f);
 		}
 
+		SDL_Event event{};
 		while( SDL_PollEvent( &event ) )
 		{
 			handle_sdl_event( event );
 		}
+
 		render_windows();
 		update_windows();
+
+		auto now = chrono::steady_clock::now();
+		if( now >= settings_file_next_check )
+		{
+			settings_file_next_check = now + settings_file_check_interval;
+			auto timestamp = tools::file_modified( settings_file_path );
+			if( timestamp > settings_file_timestamp )
+			{
+				settings_file_timestamp = timestamp;
+				reload_settings();
+			}
+		}
 	}
 
 	return 0;

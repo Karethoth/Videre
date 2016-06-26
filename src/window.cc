@@ -288,6 +288,7 @@ void Window::render() const
 
 void Window::handle_event( const GuiEvent &e )
 {
+	gui::any_gl_errors();
 	if( e.type == RESIZE )
 	{
 		SDL_GL_MakeCurrent( window.get(), gl_context );
@@ -374,6 +375,7 @@ void Window::handle_event( const GuiEvent &e )
 			}
 		}
 	}
+	gui::any_gl_errors();
 
 	if( captured_by_popup )
 	{
@@ -383,6 +385,7 @@ void Window::handle_event( const GuiEvent &e )
 	for( auto &child : children )
 	{
 		child->handle_event( e );
+		gui::any_gl_errors();
 	}
 
 	if( e.type == MOUSE_BUTTON ||
@@ -413,6 +416,7 @@ void Window::handle_event( const GuiEvent &e )
 		{
 			popup->handle_event( e );
 		}
+		gui::any_gl_errors();
 	}
 }
 

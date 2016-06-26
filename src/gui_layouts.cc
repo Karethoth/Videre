@@ -250,6 +250,7 @@ GuiVec2 GridLayout::get_minimum_size() const
 
 void SplitLayout::handle_event( const GuiEvent &e )
 {
+	gui::any_gl_errors();
 	if( e.type == MOUSE_MOVE )
 	{
 		const auto mouse_pos = e.mouse_move.pos;
@@ -425,6 +426,7 @@ void SplitLayout::handle_event( const GuiEvent &e )
 	{
 		split_bar.is_dragged = false;
 	}
+	gui::any_gl_errors();
 
 	GuiElement::handle_event( e );
 }

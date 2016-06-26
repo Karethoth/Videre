@@ -1,4 +1,5 @@
 #include "gui_button.hh"
+#include "gui_gl.hh"
 #include <algorithm>
 
 using namespace std;
@@ -53,6 +54,7 @@ void GuiButton::handle_event( const GuiEvent &e )
 			}
 			break;
 	}
+	gui::any_gl_errors();
 
 	GuiElement::handle_event( e );
 }

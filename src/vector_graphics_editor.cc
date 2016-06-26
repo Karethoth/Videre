@@ -190,7 +190,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	};
 	
 	auto button1_label = make_shared<GuiLabel>(
-		u8_to_unicode( "\xE7\x8C\xAB\xE3\x81\xAF\xE5\xB0\x8F\xE3\x81\x95\xE3\x81\x84" )
+		u8_to_unicode( "Just testing" )
 	);
 	button1_label->dynamic_font_size = true;
 	button1_label->style.normal.color_text = glm::vec4{ 0.9f };
@@ -236,7 +236,7 @@ void VectorGraphicsCanvas::create_context_menu( GuiVec2 tgt_pos )
 	};
 	
 	auto button2_label = make_shared<GuiLabel>(
-		u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0" )
+		u8_to_unicode( "\xEC\xA1\xB0\xEC\x84\xA0O123" )
 	);
 
 	button2_label->dynamic_font_size = true;
@@ -450,10 +450,10 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 	button->style.hover.color_bg  = { 1.0f, 1.0, 1.0, 0.05 };
 
 	auto button_label = make_shared<GuiLabel>(
-		u8_to_unicode( "Test" ),
+		u8_to_unicode( "子猫は月光です-1234-１２３４"),
 		16
 	);
-	auto label_padding = glm::vec4( 8, 8, 4, 8 );
+	auto label_padding = glm::vec4( 4, 4, 4, 0 );
 	button_label->style.normal.color_text = glm::vec4{ 0.8f };
 	button_label->style.hover.color_text  = glm::vec4{ 1.f };
 	button_label->style.normal.padding = label_padding;

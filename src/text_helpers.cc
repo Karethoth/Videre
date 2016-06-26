@@ -161,14 +161,17 @@ pair<GlCharacter, FontFacePtr> FontFaceManager::add_character( FontFacePtr face,
 	{
 		throw runtime_error( "Couldn't find 2d shader" );
 	}
+	gui::any_gl_errors();
 
 	glUseProgram( shader->second.program );
+	gui::any_gl_errors();
 
 	// Generate texture
 	GLuint texture=0;
 	glGenTextures( 1, &texture );
 	if( !texture )
 	{
+		gui::any_gl_errors();
 		return{ { 0 }, nullptr };
 	}
 
@@ -195,6 +198,7 @@ pair<GlCharacter, FontFacePtr> FontFaceManager::add_character( FontFacePtr face,
 	gui::any_gl_errors();
 
 	glBindTexture( GL_TEXTURE_2D, 0 );
+	gui::any_gl_errors();
 
 	// Now store character for later use
 	GlCharacter character = {

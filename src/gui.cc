@@ -1,6 +1,8 @@
 #include "gui.hh"
 #include "gl_helpers.hh"
 #include "globals.hh"
+#include "gui_gl.hh"
+
 #include <iostream>
 #include <algorithm>
 #include <exception>
@@ -166,6 +168,7 @@ void GuiElement::render() const
 		glUniform4f( colorUniform, color_bg.r, color_bg.g, color_bg.b, color_bg.a );
 		auto window_size = get_root()->size;
 		gl::render_quad_2d( shader->second, window_size.to_gl_vec(), pos.to_gl_vec(), size.to_gl_vec() );
+		gui::any_gl_errors();
 	}
 
 	for( auto& child : children )
@@ -178,6 +181,7 @@ void GuiElement::render() const
 
 void GuiElement::handle_event( const GuiEvent &e )
 {
+	gui::any_gl_errors();
 	switch( e.type )
 	{
 		case MOUSE_ENTER:
@@ -208,6 +212,7 @@ void GuiElement::handle_event( const GuiEvent &e )
 	{
 		handle_event( hover_event );
 	}
+	gui::any_gl_errors();
 
 	for( auto& event_listener : event_listeners )
 	{
@@ -225,6 +230,7 @@ void GuiElement::handle_event( const GuiEvent &e )
 			return;
 	}
 
+	gui::any_gl_errors();
 	for( auto child : children )
 	{
 		child->handle_event( e );

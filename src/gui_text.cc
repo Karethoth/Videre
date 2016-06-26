@@ -25,6 +25,11 @@ void gui::render_unicode(
 	static GLuint vao;
 	static GLuint vbo;
 
+	if( !viewport_size.x || !viewport_size.y )
+	{
+		return;
+	}
+
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	any_gl_errors();
@@ -68,6 +73,8 @@ void gui::render_unicode(
 
 	GlCharacter previous_character{};
 
+	vector<pair<GlCharacter, FT_Vector>> characters{ text.size() };
+	size_t max_used_height = 0;
 	for( auto c : text )
 	{
 		auto result = Globals::font_face_manager.get_character( face, c );
@@ -79,13 +86,12 @@ void gui::render_unicode(
 			face_ptr = face;
 		}
 
-		// Get kerning
 		FT_Vector kerning{0,0};
 		auto has_kerning = FT_HAS_KERNING( face );
 		if( has_kerning && previous_character.glyph )
 		{
 			FT_Get_Kerning(
-				face,
+				face_ptr,
 				previous_character.glyph,
 				current_character.glyph,
 				FT_KERNING_DEFAULT,
@@ -95,11 +101,22 @@ void gui::render_unicode(
 			kerning.y >>= 6;
 		}
 
+		max_used_height = max( max_used_height, current_character.font_height );
+
+		characters.emplace_back( current_character, kerning );
+	}
+
+	for( auto glyph_info : characters )
+	{
+		auto &current_character = glyph_info.first;
+		auto &kerning = glyph_info.second;
+
 		// Render
-		const auto x_adjust = current_character.bearing.x;
-		const auto y_adjust = current_character.size.y - current_character.bearing.y - kerning.y - current_character.font_height/4;
-		const GLfloat pos_x = caret_pos_x * scale + face_ptr->glyph->bitmap_left;
-		const GLfloat pos_y = tools::int_to_float( position.y - y_adjust );
+		const auto x_adjust = current_character.bearing.x + kerning.x;
+		const auto y_adjust = current_character.size.y - current_character.bearing.y
+		                    - kerning.y - max_used_height/4;
+		const GLfloat pos_x = (caret_pos_x + x_adjust) * scale;
+		const GLfloat pos_y = (position.y - y_adjust) * scale;
 		const GLfloat w = current_character.size.x * scale;
 		const GLfloat h = current_character.size.y * scale;
 
@@ -119,9 +136,10 @@ void gui::render_unicode(
 		gui::any_gl_errors();
 
 		glDrawArrays( GL_TRIANGLES, 0, 6 );
+		gui::any_gl_errors();
 		
 		// Bitshift by 6 to get pixels
-		caret_pos_x += tools::float_to_int( (current_character.advance >> 6) * scale + kerning.x );
+		caret_pos_x += tools::float_to_int( (current_character.advance >> 6) * scale );
 		previous_character = current_character;
 	}
 }
@@ -157,6 +175,11 @@ GuiVec2 gui::get_text_bounding_box(
 		auto result = Globals::font_face_manager.get_character( face, c );
 		auto current_character = result.first;
 		auto used_face = result.second;
+		auto face_ptr = used_face.get();
+		if( !face_ptr )
+		{
+			face_ptr = face;
+		}
 
 		height = max( height, current_character.font_height );
 
@@ -250,6 +273,7 @@ void TextTexture::update_texture()
 	);
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	gui::any_gl_errors();
 }
 
 
@@ -327,6 +351,7 @@ void TextTexture::render( const GuiVec2 position, const GuiVec2 viewport_size ) 
 	gui::any_gl_errors();
 
 	glDrawArrays( GL_TRIANGLES, 0, 6 );
+	gui::any_gl_errors();
 }
 
 
@@ -365,30 +390,7 @@ void GuiLabel::render() const
 			throw runtime_error( "No window found" );
 		}
 
-		auto shader = Globals::shaders.find( "2d" );
-		if( shader == Globals::shaders.end() )
-		{
-			throw runtime_error( "No shader found" );
-		}
-
-		glUseProgram( shader->second.program );
-
-		const auto color = style.get( style_state ).color_text;
 		const auto padding = style.get( style_state ).padding;
-		const auto font_face = Globals::font_face_manager.get_default_font_face();
-
-		auto used_font_size = font_size;
-		if( dynamic_font_size )
-		{
-			lock_guard<mutex> settings_lock( settings::settings_mutex );
-			auto settings_font_size = settings::core["font_size"].get<int>();
-			if( settings_font_size > 0 )
-			{
-				used_font_size = settings_font_size;
-			}
-		}
-
-		Globals::font_face_manager.sync_font_face_sizes( used_font_size );
 
 		GuiVec2 text_position{
 			tools::float_to_int( pos.x + padding.x ),
@@ -407,7 +409,9 @@ void GuiLabel::render() const
 
 void GuiLabel::handle_event( const GuiEvent &e )
 {
+	gui::any_gl_errors();
 	GuiElement::handle_event( e );
+	gui::any_gl_errors();
 
 	if( e.type == RESIZE )
 	{
@@ -428,6 +432,7 @@ void GuiLabel::handle_event( const GuiEvent &e )
 
 void GuiLabel::refresh()
 {
+	gui::any_gl_errors();
 	const auto font_face = Globals::font_face_manager.get_default_font_face();
 
 	auto used_font_size = font_size;
@@ -442,8 +447,19 @@ void GuiLabel::refresh()
 	}
 
 	Globals::font_face_manager.sync_font_face_sizes( used_font_size );
-	text_texture.reset_texture();
+
+	auto shader = Globals::shaders.find( "2d" );
+	if( shader == Globals::shaders.end() )
+	{
+		throw runtime_error( "No shader found" );
+	}
+
+	glUseProgram( shader->second.program );
+	gui::any_gl_errors();
+
 	content_size = get_text_bounding_box( font_face.get(), content, used_font_size );
+	text_texture.set_texture_size( content_size );
+	text_texture.reset_texture();
 }
 
 
