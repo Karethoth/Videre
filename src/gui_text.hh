@@ -19,6 +19,13 @@ namespace gui
 	);
 
 
+	std::vector<glm::vec4> get_text_chararacter_rects(
+		FT_Face face,
+		string_unicode text,
+		size_t font_size,
+		float scale = 1.f
+	);
+
 
 	// Get line overflow
 	string_unicode get_line_overflow(
@@ -51,7 +58,6 @@ namespace gui
 		void set_texture_size( const GuiVec2 texture_size );
 		void render( const GuiVec2 position, const GuiVec2 viewport_size, const glm::vec4 color ) const;
 		void reset_texture();
-
 
 	  protected:
 		gl::FramebufferObject framebuffer;

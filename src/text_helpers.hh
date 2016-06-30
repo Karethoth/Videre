@@ -20,6 +20,7 @@ struct FontFaceManager
 	void load_font_faces();
 	void clear_glyphs();
 
+
   protected:
 	std::map<string_u8, FontFacePtr> freetype_faces;
 	std::vector<std::pair<string_u8, FontFacePtr>> freetype_face_order;

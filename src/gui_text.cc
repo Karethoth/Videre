@@ -114,7 +114,7 @@ void gui::render_unicode(
 		// Render
 		const auto x_adjust = current_character.bearing.x + kerning.x;
 		const auto y_adjust = current_character.size.y - current_character.bearing.y
-		                    - kerning.y - max_used_height/4;
+		                    - kerning.y - max_used_height/4.f;
 		const GLfloat pos_x = (pen_pos_x + x_adjust) * scale;
 		const GLfloat pos_y = (position.y - y_adjust) * scale;
 		const GLfloat w = current_character.size.x * scale;
@@ -157,19 +157,21 @@ string_unicode gui::get_line_overflow(
 
 
 
-GuiVec2 gui::get_text_bounding_box(
+// TODO: Fix y-axis
+vector<glm::vec4> gui::get_text_chararacter_rects(
 	FT_Face face,
 	string_unicode text,
-	size_t font_size
+	size_t font_size,
+	float scale
 )
 {
-	float width = 0;
-	float height = 0;
-
+	vector<glm::vec4> rects;
 
 	Globals::font_face_manager.sync_font_face_sizes( font_size );
 
 	GlCharacter previous_character{};
+	auto offset_x = 0;
+
 	for( auto c : text )
 	{
 		auto result = Globals::font_face_manager.get_character( face, c );
@@ -180,8 +182,6 @@ GuiVec2 gui::get_text_bounding_box(
 		{
 			face_ptr = face;
 		}
-
-		height = max( height, current_character.font_height );
 
 		// Get kerning
 		FT_Vector kerning{0,0};
@@ -198,9 +198,46 @@ GuiVec2 gui::get_text_bounding_box(
 			kerning.x >>= 6;
 		}
 
-		width += kerning.x + (current_character.advance >> 6);
+		const auto x_adjust = current_character.bearing.x + kerning.x;
+		const auto y_adjust = current_character.size.y - current_character.bearing.y
+		                    - kerning.y - current_character.font_height/4.f;
+		const GLfloat pos_x = (offset_x + x_adjust) * scale;
+		const GLfloat w = current_character.size.x * scale;
+		const GLfloat h = current_character.font_height;
+
+		rects.emplace_back( pos_x, 0, w, h );
+
+		
+		offset_x += kerning.x + (current_character.advance >> 6);
 	}
 
+
+	return rects;
+}
+
+
+
+GuiVec2 gui::get_text_bounding_box(
+	FT_Face face,
+	string_unicode text,
+	size_t font_size
+)
+{
+	float width = 0;
+	float height = font_size;
+
+	const auto rects = get_text_chararacter_rects( face, text, font_size );
+
+	for( const auto& rect : rects )
+	{
+		height = max( height, rect.w );
+	}
+
+	if( rects.size() )
+	{
+		auto last_character = *prev( rects.end() );
+		width = last_character.x + last_character.z;
+	}
 
 	return { tools::float_to_int(width), tools::float_to_int(height) };
 }
@@ -419,9 +456,7 @@ void GuiLabel::render() const
 
 void GuiLabel::handle_event( const GuiEvent &e )
 {
-	gui::any_gl_errors();
 	GuiElement::handle_event( e );
-	gui::any_gl_errors();
 
 	if( e.type == RESIZE )
 	{
@@ -442,7 +477,6 @@ void GuiLabel::handle_event( const GuiEvent &e )
 
 void GuiLabel::refresh()
 {
-	gui::any_gl_errors();
 	const auto font_face = Globals::font_face_manager.get_default_font_face();
 
 	used_font_size = font_size;
@@ -465,7 +499,6 @@ void GuiLabel::refresh()
 	}
 
 	glUseProgram( shader->second.program );
-	gui::any_gl_errors();
 
 	content_size = get_text_bounding_box( font_face.get(), content, used_font_size );
 	text_texture.set_texture_size( content_size );
@@ -544,6 +577,8 @@ void GuiTextField::update()
 
 void GuiTextField::render() const
 {
+	GuiElement::render();
+
 	try
 	{
 		auto window = dynamic_cast<const Window*>( get_root() );
@@ -559,8 +594,6 @@ void GuiTextField::render() const
 		}
 
 		glUseProgram( shader->second.program );
-
-		GuiElement::render();
 
 		const auto color = style.get( style_state ).color_text;
 		const auto padding = style.get( style_state ).padding;
@@ -585,11 +618,11 @@ void GuiTextField::render() const
 		);
 
 		render_unicode( shader->second, content, text_pos, window->size, font_face.get(), color );
-		if( cursor.is_shown )
+		if( is_active && cursor.is_shown )
 		{
 			auto cursor_pos = GuiVec2(
-				pos.x + padding.x + cursor.pos_x + 1,
-				pos.y + size.h/4
+				tools::float_to_int( pos.x + padding.x + cursor.pos_x + 1 ),
+				tools::float_to_int( pos.y + size.h/4 )
 			);
 
 			gl::render_line_2d(
@@ -610,16 +643,82 @@ void GuiTextField::render() const
 
 void GuiTextField::handle_event( const GuiEvent &e )
 {
+	GuiElement::handle_event( e );
 
-	if( e.type == GuiEventType::MOUSE_BUTTON &&
-	    in_area( e.mouse_button.pos ) &&
-	    e.mouse_button.state == RELEASED )
+	// Get rid of events that are not relevant
+	switch( e.type )
+	{
+		case GuiEventType::MOUSE_BUTTON:
+			if( !in_area( e.mouse_button.pos ) )
+			{
+				is_active = false;
+				return;
+			}
+			break;
+
+		case GuiEventType::MOUSE_DOUBLE_CLICK:
+			if( !in_area( e.mouse_double_click.pos ) )
+			{
+				is_active = false;
+				return;
+			}
+			break;
+
+		case GuiEventType::MOUSE_DRAG:
+			if( !in_area( e.mouse_drag.pos_start ) )
+			{
+				is_active = false;
+				return;
+			}
+			break;
+
+		case GuiEventType::MOUSE_DRAG_END:
+			if( !in_area( e.mouse_drag_end.pos_start ) )
+			{
+				is_active = false;
+				return;
+			}
+			break;
+	}
+
+	if( e.type == GuiEventType::MOUSE_BUTTON )
+	{
+		is_active = true;
+		cursor.next_step = chrono::steady_clock::now() + cursor.interval;
+		cursor.is_shown = true;
+
+		// Set cursor position
+		auto face = Globals::font_face_manager.get_default_font_face();
+		const auto padding = style.get( style_state ).padding;
+		const auto rects = get_text_chararacter_rects( face.get(), content, font_size );
+		const auto mouse_offset_x = e.mouse_button.pos.x - padding.x - pos.x;
+		size_t character_index = 0;
+
+		for( const auto& rect : rects )
+		{
+			if( rect.x + rect.z/2 >= mouse_offset_x )
+			{
+				break;
+			}
+			character_index++;
+		}
+		cursor.index = character_index;
+		update_content();
+		refresh();
+	}
+	else if( e.type == GuiEventType::MOUSE_DOUBLE_CLICK )
+	{
+		is_active = true;
+		// TODO: Select all text
+	}
+	else if( e.type == GuiEventType::MOUSE_DRAG )
 	{
 		is_active = true;
 	}
-	else
+
+	if( !is_active )
 	{
-		is_active = false;
+		return;
 	}
 
 	if( e.type == TEXT_INPUT )
@@ -666,7 +765,7 @@ void GuiTextField::handle_event( const GuiEvent &e )
 		refresh();
 	}
 
-	else if ( e.type == KEY )
+	else if( e.type == KEY )
 	{
 		if( e.key.state == PRESSED )
 		{
@@ -676,6 +775,7 @@ void GuiTextField::handle_event( const GuiEvent &e )
 				text_edit.text.pop_back();
 				update_content();
 			}
+
 			else if( e.key.button.scancode == SDL_SCANCODE_BACKSPACE &&
 			         text_input.size() > 0 )
 			{
@@ -686,12 +786,14 @@ void GuiTextField::handle_event( const GuiEvent &e )
 					update_content();
 				}
 			}
+
 			else if( e.key.button.scancode == SDL_SCANCODE_DELETE &&
 			         text_input.size() > cursor.index )
 			{
 				text_input.erase( text_input.begin() + cursor.index );
 				update_content();
 			}
+
 			else if( text_edit.is_ime_on &&
 			         ( e.key.button.scancode == SDL_SCANCODE_RETURN ||
 			           e.key.button.scancode == SDL_SCANCODE_ESCAPE ) )
@@ -731,8 +833,6 @@ void GuiTextField::handle_event( const GuiEvent &e )
 			}
 		}
 	}
-
-	GuiElement::handle_event( e );
 }
 
 

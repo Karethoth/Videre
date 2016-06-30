@@ -266,7 +266,7 @@ void Window::handle_sdl_event( const SDL_Event &e )
 			gui_event.type = KEY;
 			gui_event.key.state = e.key.state == SDL_PRESSED ? PRESSED : RELEASED;
 			gui_event.key.button = e.key.keysym;
-			gui_event.key.is_repeat = e.key.repeat;
+			gui_event.key.is_repeat = e.key.repeat != 0;
 			handle_event( gui_event );
 			break;
 	}

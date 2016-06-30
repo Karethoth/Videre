@@ -380,9 +380,6 @@ int main( int argc, char **argv )
 		}
 	}
 
-
-	//SDL_StartTextInput();
-
 	// Settings file checks
 	const auto settings_file_path = string{ "settings.json" };
 	const auto settings_file_check_interval = chrono::milliseconds( 1000 );
