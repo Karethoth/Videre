@@ -198,6 +198,11 @@ vector<glm::vec4> gui::get_text_chararacter_rects(
 			kerning.x >>= 6;
 		}
 
+		if( current_character.size.x == 0 )
+		{
+			current_character.size.x = font_size / 2;
+		}
+
 		const auto x_adjust = current_character.bearing.x + kerning.x;
 		const auto y_adjust = current_character.size.y - current_character.bearing.y
 		                    - kerning.y - current_character.font_height/4.f;
@@ -617,7 +622,50 @@ void GuiTextField::render() const
 			tools::float_to_int( window->size.h - pos.y - padding.y - used_font_size )
 		);
 
-		render_unicode( shader->second, content, text_pos, window->size, font_face.get(), color );
+		if( selection.is_active )
+		{
+			const auto hilight_color = glm::vec4{
+				1.f - color.r,
+				1.f - color.g,
+				1.f - color.b,
+				color.a
+			};
+
+			const auto text_before_selection = string_unicode{ content.begin(), content.begin() + selection.start };
+			const auto selected_text = string_unicode{ content.begin()+selection.start, content.begin() + selection.end };
+			const auto text_after_selection = string_unicode{ content.begin() + selection.end, content.end() };
+
+			const auto text_before_selection_width = get_text_bounding_box(
+				font_face.get(),
+				text_before_selection,
+				font_size
+			).w;
+
+			const auto selected_text_width = get_text_bounding_box(
+				font_face.get(),
+				selected_text,
+				font_size
+			).w;
+
+			if( text_before_selection.size() )
+			{
+				render_unicode( shader->second, text_before_selection, text_pos, window->size, font_face.get(), color );
+				text_pos.x += text_before_selection_width;
+			}
+
+			render_unicode( shader->second, selected_text, text_pos, window->size, font_face.get(), hilight_color );
+
+			if( text_after_selection.size() )
+			{
+				text_pos.x += selected_text_width;
+				render_unicode( shader->second, text_after_selection, text_pos, window->size, font_face.get(), color );
+			}
+		}
+		else
+		{
+			render_unicode( shader->second, content, text_pos, window->size, font_face.get(), color );
+		}
+
 		if( is_active && cursor.is_shown )
 		{
 			auto cursor_pos = GuiVec2(
@@ -681,16 +729,20 @@ void GuiTextField::handle_event( const GuiEvent &e )
 			break;
 	}
 
-	if( e.type == GuiEventType::MOUSE_BUTTON )
+	if( e.type == GuiEventType::MOUSE_BUTTON &&
+		e.mouse_button.state == PRESSED )
 	{
 		is_active = true;
 		cursor.next_step = chrono::steady_clock::now() + cursor.interval;
 		cursor.is_shown = true;
+		selection.is_active = false;
+		selection.start = 0;
+		selection.end = 0;
 
 		// Set cursor position
 		auto face = Globals::font_face_manager.get_default_font_face();
 		const auto padding = style.get( style_state ).padding;
-		const auto rects = get_text_chararacter_rects( face.get(), content, font_size );
+		const auto rects = get_text_chararacter_rects( face.get(), text_input, font_size );
 		const auto mouse_offset_x = e.mouse_button.pos.x - padding.x - pos.x;
 		size_t character_index = 0;
 
@@ -704,16 +756,65 @@ void GuiTextField::handle_event( const GuiEvent &e )
 		}
 		cursor.index = character_index;
 		update_content();
-		refresh();
 	}
+
 	else if( e.type == GuiEventType::MOUSE_DOUBLE_CLICK )
 	{
 		is_active = true;
-		// TODO: Select all text
+
+		// Select all text
+		if( text_input.size() )
+		{
+			selection.is_active = true;
+			selection.start = 0;
+			selection.end = text_input.size();
+			cursor.is_shown = false;
+			cursor.index = text_input.size();
+		}
+		else
+		{
+			selection.is_active = false;
+			selection.start = 0;
+			selection.end = 0;
+		}
+
+		update_content();
 	}
+
 	else if( e.type == GuiEventType::MOUSE_DRAG )
 	{
-		is_active = true;
+		auto face = Globals::font_face_manager.get_default_font_face();
+		const auto padding = style.get( style_state ).padding;
+		const auto rects = get_text_chararacter_rects( face.get(), text_input, font_size );
+		const auto start_x = min( e.mouse_drag.pos_start.x, e.mouse_drag.pos_current.x ) - padding.x - pos.x;
+		const auto end_x = max( e.mouse_drag.pos_start.x, e.mouse_drag.pos_current.x ) - padding.x -pos.x;
+
+		size_t start_index = 0;
+		size_t end_index = 0;
+
+		for( const auto& rect : rects )
+		{
+			if( rect.x + rect.z/2 >= start_x )
+			{
+				break;
+			}
+			start_index++;
+		}
+
+		for( const auto& rect : rects )
+		{
+			if( rect.x + rect.z/2 >= end_x )
+			{
+				break;
+			}
+			end_index++;
+		}
+		selection.is_active = true;
+		selection.start = start_index;
+		selection.end = end_index;
+		cursor.index = end_index;
+		update_content();
+
 	}
 
 	if( !is_active )
@@ -741,7 +842,21 @@ void GuiTextField::handle_event( const GuiEvent &e )
 			return;
 		}
 
+		if( selection.is_active )
+		{
+			text_input.erase(
+				text_input.begin() + selection.start,
+				text_input.begin() + selection.end
+			);
+			cursor.index = selection.start;
+		}
+
+		selection.is_active = false;
+		selection.start = 0;
+		selection.end = 0;
+
 		text_input.insert( text_input.begin()+cursor.index, new_input.begin(), new_input.end() );
+
 		text_edit.text = {};
 		cursor.index += new_input.size();
 
@@ -761,6 +876,19 @@ void GuiTextField::handle_event( const GuiEvent &e )
 	{
 		text_edit.text = u8_to_unicode( e.text_edit.text );
 		text_edit.is_ime_on = true;
+
+		if( selection.is_active )
+		{
+			text_input.erase(
+				text_input.begin() + selection.start,
+				text_input.begin() + selection.end
+			);
+			cursor.index = selection.start;
+			selection.is_active = false;
+			selection.start = 0;
+			selection.end = 0;
+		}
+
 		update_content();
 		refresh();
 	}
@@ -779,7 +907,20 @@ void GuiTextField::handle_event( const GuiEvent &e )
 			else if( e.key.button.scancode == SDL_SCANCODE_BACKSPACE &&
 			         text_input.size() > 0 )
 			{
-				if( cursor.index > 0 )
+				if( selection.is_active )
+				{
+					text_input.erase(
+						text_input.begin() + selection.start,
+						text_input.begin() + selection.end
+					);
+					cursor.index = selection.start;
+					selection.is_active = false;
+					selection.start = 0;
+					selection.end = 0;
+					update_content();
+				}
+
+				else if( cursor.index > 0 )
 				{
 					text_input.erase( text_input.begin() + cursor.index-1 );
 					cursor.index--;
@@ -787,10 +928,24 @@ void GuiTextField::handle_event( const GuiEvent &e )
 				}
 			}
 
-			else if( e.key.button.scancode == SDL_SCANCODE_DELETE &&
-			         text_input.size() > cursor.index )
+			else if( e.key.button.scancode == SDL_SCANCODE_DELETE )
 			{
-				text_input.erase( text_input.begin() + cursor.index );
+				if( selection.is_active )
+				{
+					text_input.erase(
+						text_input.begin() + selection.start,
+						text_input.begin() + selection.end
+					);
+					cursor.index = selection.start;
+					selection.is_active = false;
+					selection.start = 0;
+					selection.end = 0;
+				}
+
+				else if( text_input.size() > cursor.index )
+				{
+					text_input.erase( text_input.begin() + cursor.index );
+				}
 				update_content();
 			}
 
@@ -799,12 +954,38 @@ void GuiTextField::handle_event( const GuiEvent &e )
 			           e.key.button.scancode == SDL_SCANCODE_ESCAPE ) )
 			{
 				text_edit.is_ime_on = false;
+				selection.is_active = false;
+				selection.start = 0;
+				selection.end = 0;
+				update_content();
+			}
+
+			else if( e.key.button.scancode == SDL_SCANCODE_ESCAPE )
+			{
+				selection.is_active = false;
+				selection.start = 0;
+				selection.end = 0;
+				update_content();
 			}
 
 			else if( e.key.button.scancode == SDL_SCANCODE_SPACE &&
 			         !text_edit.text.size() )
 			{
-				if( text_input.size() < max_characters )
+				if( selection.is_active )
+				{
+					text_input.erase(
+						text_input.begin() + selection.start,
+						text_input.begin() + selection.end
+					);
+					text_input.insert( text_input.begin() + selection.start, ' ' );
+					cursor.index = selection.start + 1;
+					selection.is_active = false;
+					selection.start = 0;
+					selection.end = 0;
+					update_content();
+				}
+
+				else if( text_input.size() < max_characters )
 				{
 					text_input.insert( text_input.begin() + cursor.index, ' ' );
 					cursor.index++;
@@ -830,6 +1011,16 @@ void GuiTextField::handle_event( const GuiEvent &e )
 					cursor.index++;
 					update_content();
 				}
+			}
+
+			else if( e.key.button.scancode == SDL_SCANCODE_A &&
+				e.key.button.mod & KMOD_CTRL )
+			{
+				selection.is_active = true;
+				selection.start = 0;
+				selection.end = text_input.size();
+				cursor.index = text_input.size();
+				update_content();
 			}
 		}
 	}
@@ -857,6 +1048,10 @@ void GuiTextField::update_content()
 
 	if( text_edit.text.size() )
 	{
+		if( selection.is_active )
+		{
+			used_cursor_index = selection.end;
+		}
 		content.insert( content.begin() + used_cursor_index, text_edit.text.begin(), text_edit.text.end() );
 		used_cursor_index += text_edit.text.size();
 	}

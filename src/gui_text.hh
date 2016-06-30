@@ -125,6 +125,13 @@ namespace gui
 			std::chrono::milliseconds interval{ 500 };
 		} cursor;
 
+		struct
+		{
+			bool is_active{ false };
+			size_t start{ 0 };
+			size_t end{ 0 };
+		} selection;
+
 		void update_content();
 	};
 
