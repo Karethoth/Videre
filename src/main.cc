@@ -3,8 +3,9 @@
 #include "window.hh"
 #include "globals.hh"
 #include "settings.hh"
-#include "gui_layouts.hh"
 #include "gui_gl.hh"
+#include "gui_layouts.hh"
+#include "gui_text.hh"
 #include "gl_helpers.hh"
 #include "text_helpers.hh"
 #include "shaderProgram.hh"
@@ -189,7 +190,8 @@ void init_freetype()
 
 void render_windows()
 {
-	try {
+	try
+	{
 		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
 		for( auto& window : Globals::windows )
 		{
@@ -206,7 +208,8 @@ void render_windows()
 
 void update_windows()
 {
-	try {
+	try
+	{
 		lock_guard<mutex> windows_lock{ Globals::windows_mutex };
 		for( auto it = Globals::windows.begin();
 		it != Globals::windows.end(); )
@@ -357,7 +360,7 @@ int main( int argc, char **argv )
 		{
 			return gui::GuiElementPtrPair(
 				make_shared<VectorGraphicsEditor>(),
-				make_shared<gui::SplitLayout>()
+				make_shared<gui::GuiTextArea>()
 			);
 		};
 

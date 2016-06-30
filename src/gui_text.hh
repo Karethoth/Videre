@@ -95,26 +95,17 @@ namespace gui
 
 
 
-	struct GuiTextField : GuiLabel
+	struct TextInfo
 	{
-		bool is_active;
+		string_unicode input;
 		size_t max_characters;
 
-		GuiTextField();
-		virtual ~GuiTextField();
 
-		virtual void update() override;
-		virtual void render() const override;
-		virtual void handle_event( const GuiEvent &e ) override;
-		virtual GuiVec2 get_minimum_size() const override;
-
-	  protected:
-		string_unicode text_input;
 		struct
 		{
 			string_unicode text;
 			bool   is_ime_on;
-		} text_edit;
+		} edit;
 
 		struct
 		{
@@ -131,7 +122,25 @@ namespace gui
 			size_t start{ 0 };
 			size_t end{ 0 };
 		} selection;
+	};
 
+
+
+	struct GuiTextField : GuiLabel
+	{
+		bool is_active;
+
+		TextInfo text_info;
+
+		GuiTextField();
+		virtual ~GuiTextField();
+
+		virtual void update() override;
+		virtual void render() const override;
+		virtual void handle_event( const GuiEvent &e ) override;
+		virtual GuiVec2 get_minimum_size() const override;
+
+	  protected:
 		void update_content();
 	};
 

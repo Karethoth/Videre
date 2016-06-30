@@ -523,9 +523,9 @@ VectorGraphicsToolbar::VectorGraphicsToolbar()
 	input_field->style.normal.color_text = color_text;
 	input_field->style.hover.color_text = color_text;
 	input_field->dynamic_font_size = false;
-	input_field->max_characters = 16;
 	input_field->size.w = 200;
 	input_field->set_font_size( 16 );
+	input_field->text_info.max_characters = 16;
 	add_child( input_field );
 }
 
