@@ -21,6 +21,10 @@
     {
       "name": "FreeMono",
       "path": "/usr/share/fonts/truetype/freetype/FreeMono.ttf"
+    },
+    {
+      "name": "FreeMono",
+      "path": "/usr/share/fonts/truetype/freefont/FreeMono.ttf"
     }
   ]
 }

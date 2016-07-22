@@ -21,6 +21,17 @@
 using namespace std;
 using namespace gui;
 
+#ifndef _WIN32
+auto strncpy_s( char *dest, size_t destsz, const char *src, size_t count )
+{
+	if(count > destsz)
+	{
+		throw runtime_error( "strncpy_s: not enough room in destination" );
+	}
+	
+	return strncpy( dest, src, count );
+}
+#endif
 
 Window::Window()
 : closed(false),

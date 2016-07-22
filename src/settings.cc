@@ -112,5 +112,19 @@ chrono::system_clock::time_point tools::file_modified( const std::string &path )
 
 	return tm.to_time_point();
 }
+
+#else
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+chrono::system_clock::time_point tools::file_modified( const std::string &path )
+{
+	struct stat attr;
+	stat(path.c_str(), &attr);
+	auto tp = std::chrono::system_clock::time_point(std::chrono::seconds(attr.st_mtime));
+	return tp;
+}
+
 #endif
 

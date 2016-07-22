@@ -4,7 +4,10 @@
 #include "settings.hh"
 
 #include <iostream>
+
+#ifdef _WIN32
 #include <ftlcdfil.h>
+#endif
 
 using namespace std;
 
@@ -383,7 +386,9 @@ void FontFaceManager::load_font_faces()
 		}
 	}
 
+	#ifdef _WIN32
 	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
+	#endif
 
 	// Try to load the fonts
 	FT_Face tmp_face = nullptr;

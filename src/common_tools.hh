@@ -110,15 +110,15 @@ inline int float_to_int( const float f ) noexcept
 template <typename T=std::wstring>
 T read_file_contents( const std::string& filename )
 {
-	ifstream in( filename, ios_base::in | ios_base::binary );
+	std::ifstream in( filename, std::ios_base::in | std::ios_base::binary );
 	if( !in.is_open() )
 	{
-		throw runtime_error( std::string{ "Couldn't open the file: '" } + filename + "'" );
+		throw std::runtime_error( std::string{ "Couldn't open the file: '" } + filename + "'" );
 	}
 
 	T str{
-		istreambuf_iterator<char>( in ),
-		istreambuf_iterator<char>()
+		std::istreambuf_iterator<char>( in ),
+		std::istreambuf_iterator<char>()
 	};
 
 	return str;

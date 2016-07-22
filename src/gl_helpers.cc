@@ -1,5 +1,3 @@
-#pragma once
-
 #include "gl_helpers.hh"
 #include "text_helpers.hh"
 #include "globals.hh"

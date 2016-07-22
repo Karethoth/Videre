@@ -1,4 +1,3 @@
-#pragma once
 #include "gui_menu.hh"
 #include "gl_helpers.hh"
 #include "globals.hh"

@@ -101,7 +101,7 @@ void gui::render_unicode(
 			kerning.y >>= 6;
 		}
 
-		max_used_height = max( max_used_height, current_character.font_height );
+		max_used_height = max<size_t>( max_used_height, current_character.font_height );
 
 		characters.emplace_back( current_character, kerning );
 	}

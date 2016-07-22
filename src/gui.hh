@@ -45,7 +45,7 @@ struct GuiVec2
 		};
 	};
 
-	GuiVec2( int _x=0, int _y=0 ) : x( _x ), y( _y ), w(_x), h(_y) {};
+	GuiVec2( int _x=0, int _y=0 ) : x(_x), y(_y) {};
 	glm::vec2 to_gl_vec() const { return { x, y }; };
 };
 

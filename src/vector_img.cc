@@ -1,5 +1,3 @@
-#pragma once
-
 #include "vector_img.hh"
 
 using namespace vector_img;

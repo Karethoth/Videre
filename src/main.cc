@@ -22,7 +22,6 @@
 #include <exception>
 
 #include <json.hpp>
-#include <ftlcdfil.h>
 
 #ifdef _WIN32
 #include <io.h>

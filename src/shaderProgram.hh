@@ -20,6 +20,6 @@ struct ShaderProgram
 
 	~ShaderProgram();
 
-	const GLint ShaderProgram::get_uniform( const std::string& uniform_name ) const;
+	const GLint get_uniform( const std::string& uniform_name ) const;
 };
 
