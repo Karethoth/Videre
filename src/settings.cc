@@ -1,5 +1,6 @@
 #include "settings.hh"
 #include "globals.hh"
+#include "logging.hh"
 
 #include <thread>
 
@@ -57,7 +58,7 @@ thread tools::run_when_file_updated(
 			}
 			catch( runtime_error &e )
 			{
-				wcout << "Error: " << e.what() << endl;
+				LOG( ERRORS, e.what() );
 			}
 
 			this_thread::sleep_until( next_run );

@@ -1,9 +1,13 @@
 #include "gui_gl.hh"
+#include "logging.hh"
+
+#include <string>
 
 #ifdef _WIN32
 #pragma comment(lib, "opengl32.lib")
 
-#pragma comment(lib, "freetype263.lib")
+#pragma comment(lib, "freetype240.lib")
+//#pragma comment(lib, "freetype263.lib")
 #endif
 
 using namespace gui;
@@ -50,7 +54,7 @@ bool gui::any_gl_errors()
 	if( err != GL_NO_ERROR )
 	{
 		had_error = true;
-		std::wcout << "gl_error: " << err << std::endl;
+		LOG( ERRORS, string_u8{ "gl_error: " } + std::to_string(err) + '\n' );
 	}
 	return had_error;
 }

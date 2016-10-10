@@ -5,6 +5,8 @@
 #include <iostream>
 #include <type_traits>
 
+#include "logging.hh"
+
 namespace tools
 {
 
@@ -62,7 +64,8 @@ struct Defer
 		}
 		catch( ... )
 		{
-			std::cout << "Defer<F> - Ran into an exception when called the deferred func!" << std::endl;
+			auto asd = __FILE__;
+			auto wasd = __LINE__;
 		}
 	}
 

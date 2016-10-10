@@ -81,6 +81,9 @@
     <ClCompile Include="src\globals.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\logging.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common_tools.hh">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\common_types.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

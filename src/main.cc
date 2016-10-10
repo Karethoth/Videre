@@ -10,6 +10,7 @@
 #include "text_helpers.hh"
 #include "shaderProgram.hh"
 #include "vector_graphics_editor.hh"
+#include "logging.hh"
 
 #include <mutex>
 #include <memory>
@@ -29,7 +30,6 @@
 #include <windows.h>
 
 #pragma comment( lib, "SDL2.lib" )
-#pragma comment( lib, "SDL2_ttf.lib" )
 #pragma comment( lib, "SDL2_image.lib" )
 #endif
 
@@ -77,7 +77,7 @@ void handle_sdl_event( const SDL_Event &e )
 	}
 	catch( runtime_error &e )
 	{
-		wcout << "Exception: " << e.what() << "\n";
+		LOG( ERRORS, string_u8{ "Exception: " } + e.what() );
 	}
 }
 
@@ -138,8 +138,7 @@ void init_graphics()
 	auto glewRes = glewInit();
 	if( glewRes != GLEW_OK )
 	{
-		wcout << (char*)glewGetErrorString( glewRes );
-		throw runtime_error{ string{ "glewInit failed" } };
+		throw runtime_error{ string{ "glewInit failed" } + (const char*)glewGetErrorString( glewRes ) };
 	}
 
 	// Get rid of the GL_INVALID_ENUM error caused by glewInit
@@ -199,7 +198,7 @@ void render_windows()
 	}
 	catch( runtime_error &e )
 	{
-		wcout << "Exception: " << e.what() << "\n";
+		LOG( ERRORS, string_u8{ "Exception: " } + e.what() );
 	}
 }
 
@@ -225,7 +224,7 @@ void update_windows()
 	}
 	catch( runtime_error &e )
 	{
-		wcout << "Exception: " << e.what() << "\n";
+		LOG( ERRORS, string_u8{ "Exception: " } + e.what() );
 	}
 }
 
@@ -233,7 +232,7 @@ void update_windows()
 
 void load_settings()
 {
-	wcout << "Loading settings...\n";
+	LOG( GENERAL, "Loading settings..." );
 
 	wstring_convert<codecvt_utf8<wchar_t>> converter;
 
@@ -251,11 +250,11 @@ void load_settings()
 	}
 	catch( runtime_error &e )
 	{
-		wcout << "Exception: " << e.what() << endl;
+		LOG( ERRORS, string_u8{ "Exception: " } + e.what() );
 	}
 	catch( ... )
 	{
-		wcout << "Couldn't parse settings.json" << endl;
+		LOG( ERRORS, "Couldn't parse settings.json" );
 	}
 }
 
@@ -263,7 +262,7 @@ void load_settings()
 
 void apply_settings()
 {
-	wcout << "Applying settings...\n";
+	LOG( GENERAL, "Applying settings..." );
 
 	// Lock windows_mutex to prevent updates and rendering on the
 	// main loop while we update font faces
@@ -308,6 +307,9 @@ int main( int argc, char **argv )
 {
 	srand( time( 0 ) );
 
+	logging::Logger::add_log_file( logging::LogCategory::GENERAL, "log.txt" );
+	logging::Logger::add_log_file( logging::LogCategory::ERRORS, "errors.txt" );
+
 #ifdef  _DEBUG
 	auto defer_enter_to_quit = tools::make_defer( []()
 	{
@@ -329,7 +331,7 @@ int main( int argc, char **argv )
 	}
 	catch( runtime_error &e )
 	{
-		wcerr << "Initialization error:" << e.what() << endl;
+		LOG( ERRORS, string_u8{"Initlialization error:"} + e.what() );
 		return 1;
 	}
 

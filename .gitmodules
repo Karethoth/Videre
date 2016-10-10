@@ -5,3 +5,6 @@
 [submodule "include/GSL"]
 	path = include/GSL
 	url = https://github.com/Microsoft/GSL.git
+[submodule "include/catch"]
+	path = include/catch
+	url = https://github.com/philsquared/Catch

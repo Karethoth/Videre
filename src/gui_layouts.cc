@@ -3,6 +3,7 @@
 #include "globals.hh"
 #include "gl_helpers.hh"
 #include "common_tools.hh"
+#include "logging.hh"
 
 #include <iostream>
 #include <string>
@@ -552,13 +553,13 @@ void SplitLayout::split_layout()
 {
 	if( is_layout_splitted )
 	{
-		wcout << "Trying to split already splitted layout." << endl;
+		LOG( ERRORS, "Trying to split already splitted layout." );
 		return;
 	}
 
 	if( !is_splitting_allowed )
 	{
-		wcout << "Trying to split unsplittable layout." << endl;
+		LOG( ERRORS, "Trying to split unsplittable layout." );
 		return;
 	}
 

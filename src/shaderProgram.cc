@@ -66,7 +66,6 @@ using namespace std;
 
 ShaderProgram::~ShaderProgram()
 {
-	wcout << "Deleting program " << program << endl;
 	if( program )
 	{
 		glDeleteProgram( program );

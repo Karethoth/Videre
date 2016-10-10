@@ -153,6 +153,7 @@
     <ClCompile Include="src\gui_menu.cc" />
     <ClCompile Include="src\gui_popup_element.cc" />
     <ClCompile Include="src\gui_text.cc" />
+    <ClCompile Include="src\logging.cc" />
     <ClCompile Include="src\main.cc" />
     <ClCompile Include="src\sdl2.cc" />
     <ClCompile Include="src\settings.cc" />
@@ -174,6 +175,7 @@
     <ClInclude Include="src\gui_menu.hh" />
     <ClInclude Include="src\gui_popup_element.hh" />
     <ClInclude Include="src\gui_text.hh" />
+    <ClInclude Include="src\logging.hh" />
     <ClInclude Include="src\text_helpers.hh" />
     <ClInclude Include="src\vector_graphics_editor.hh" />
     <ClInclude Include="src\mesh.hh" />

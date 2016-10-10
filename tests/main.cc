@@ -11,7 +11,6 @@
 #include <windows.h>
 
 #pragma comment( lib, "SDL2.lib" )
-#pragma comment( lib, "SDL2_ttf.lib" )
 #pragma comment( lib, "SDL2_image.lib" )
 #endif
 

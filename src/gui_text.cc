@@ -4,6 +4,7 @@
 #include "gl_helpers.hh"
 #include "globals.hh"
 #include "settings.hh"
+#include "logging.hh"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -74,7 +75,7 @@ void gui::render_unicode(
 	GlCharacter previous_character{};
 
 	vector<pair<GlCharacter, FT_Vector>> characters{ text.size() };
-	size_t max_used_height = 0;
+	unsigned max_used_height = 0;
 	for( auto c : text )
 	{
 		auto result = Globals::font_face_manager.get_character( face, c );
@@ -101,7 +102,7 @@ void gui::render_unicode(
 			kerning.y >>= 6;
 		}
 
-		max_used_height = max<size_t>( max_used_height, current_character.font_height );
+		max_used_height = max<unsigned>( max_used_height, current_character.font_height );
 
 		characters.emplace_back( current_character, kerning );
 	}
@@ -161,7 +162,7 @@ string_unicode gui::get_line_overflow(
 vector<glm::vec4> gui::get_text_chararacter_rects(
 	FT_Face face,
 	string_unicode text,
-	size_t font_size,
+	unsigned font_size,
 	float scale
 )
 {
@@ -200,7 +201,7 @@ vector<glm::vec4> gui::get_text_chararacter_rects(
 
 		if( current_character.size.x == 0 )
 		{
-			current_character.size.x = font_size / 2;
+			current_character.size.x = static_cast<int>(font_size / 2);
 		}
 
 		const auto x_adjust = current_character.bearing.x + kerning.x;
@@ -208,7 +209,7 @@ vector<glm::vec4> gui::get_text_chararacter_rects(
 		                    - kerning.y - current_character.font_height/4.f;
 		const GLfloat pos_x = (offset_x + x_adjust) * scale;
 		const GLfloat w = current_character.size.x * scale;
-		const GLfloat h = current_character.font_height;
+		const GLfloat h = tools::int_to_float( current_character.font_height );
 
 		rects.emplace_back( pos_x, 0, w, h );
 
@@ -225,11 +226,11 @@ vector<glm::vec4> gui::get_text_chararacter_rects(
 GuiVec2 gui::get_text_bounding_box(
 	FT_Face face,
 	string_unicode text,
-	size_t font_size
+	unsigned font_size
 )
 {
 	float width = 0;
-	float height = font_size;
+	float height = tools::int_to_float( font_size );
 
 	const auto rects = get_text_chararacter_rects( face, text, font_size );
 
@@ -249,7 +250,7 @@ GuiVec2 gui::get_text_bounding_box(
 
 
 
-TextTexture::TextTexture( string_unicode text, size_t font_size, GuiVec2 texture_size )
+TextTexture::TextTexture( string_unicode text, unsigned font_size, GuiVec2 texture_size )
 : content(text),
   font_size(font_size),
   texture_size(texture_size.w, texture_size.h)
@@ -271,7 +272,7 @@ void TextTexture::set_text( const string_unicode text )
 
 
 
-void TextTexture::set_font_size( const size_t size )
+void TextTexture::set_font_size( const unsigned size )
 {
 	font_size = size;
 }
@@ -398,7 +399,7 @@ void TextTexture::render( const GuiVec2 position, const GuiVec2 viewport_size, c
 
 
 
-GuiLabel::GuiLabel( string_unicode text, size_t size )
+GuiLabel::GuiLabel( string_unicode text, unsigned size )
 : content(text),
   font_size(size),
   content_size(0, 0),
@@ -409,7 +410,7 @@ GuiLabel::GuiLabel( string_unicode text, size_t size )
 
 
 
-GuiLabel::GuiLabel( string_u8 text, size_t size )
+GuiLabel::GuiLabel( string_u8 text, unsigned size )
 : content(u8_to_unicode( text )),
   font_size(size ),
   content_size(0, 0),
@@ -453,7 +454,7 @@ void GuiLabel::render() const
 	}
 	catch( runtime_error &e )
 	{
-		wcout << "GuiLabel::render failed: " << e.what() << "\n";
+		LOG( ERRORS, string_u8{ "GuiLabel::render failed: " } + e.what() );
 	}
 }
 
@@ -545,7 +546,7 @@ GuiVec2 GuiLabel::get_minimum_size() const
 
 
 
-void GuiLabel::set_font_size( size_t size )
+void GuiLabel::set_font_size( unsigned size )
 {
 	font_size = size;
 	refresh();
@@ -554,6 +555,7 @@ void GuiLabel::set_font_size( size_t size )
 
 
 GuiTextField::GuiTextField()
+: is_active(false)
 {
 	text_info.cursor.index = 0;
 	text_info.cursor.is_shown = false;
@@ -678,7 +680,7 @@ void GuiTextField::render() const
 		{
 			auto cursor_pos = GuiVec2(
 				tools::float_to_int( pos.x + padding.x + text_info.cursor.pos_x + 1 ),
-				tools::float_to_int( pos.y + size.h/4 )
+				tools::float_to_int( pos.y + size.h/4.f )
 			);
 
 			gl::render_line_2d(
@@ -691,7 +693,7 @@ void GuiTextField::render() const
 	}
 	catch( runtime_error &e )
 	{
-		wcout << "GuiTextField::render failed: " << e.what() << "\n";
+		LOG( ERRORS, string_u8{ "GuiTextField::render failed: " } + e.what() );
 	}
 }
 
@@ -703,7 +705,7 @@ bool handle_text_event(
 	TextInfo &state,
 	string_unicode &content,
 	bool &is_active,
-	size_t font_size
+	unsigned font_size
 )
 {
 	bool do_update = false;
@@ -1152,7 +1154,7 @@ void GuiTextArea::render() const
 	}
 	catch( runtime_error &e )
 	{
-		wcout << "GuiTextArea::render failed: " << e.what() << "\n";
+		LOG( ERRORS, string_u8{ "GuiTextArea::render failed: " } + e.what() );
 	}
 }
 

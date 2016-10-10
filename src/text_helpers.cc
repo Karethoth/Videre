@@ -2,11 +2,12 @@
 #include "globals.hh"
 #include "gui_gl.hh"
 #include "settings.hh"
+#include "logging.hh"
 
 #include <iostream>
 
 #ifdef _WIN32
-#include <ftlcdfil.h>
+//#include <ftlcdfil.h>
 #endif
 
 using namespace std;
@@ -154,7 +155,7 @@ pair<GlCharacter, FontFacePtr> FontFaceManager::add_character( FontFacePtr face,
 	auto err = FT_Load_Char( face_ptr, c, FT_LOAD_RENDER );
 	if( err )
 	{
-		std::wcout << "ERROR::FREETYTPE: Failed to load Glyph(" << err << ")" << std::endl;
+		LOG( ERRORS, string_u8{ "FREETYTPE: Failed to load Glyph " } + std::to_string( err ) );
 		return {};
 	}
 
@@ -387,7 +388,7 @@ void FontFaceManager::load_font_faces()
 	}
 
 	#ifdef _WIN32
-	FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
+	//FT_Library_SetLcdFilter( Globals::freetype, FT_LCD_FILTER_DEFAULT );
 	#endif
 
 	// Try to load the fonts
@@ -396,8 +397,8 @@ void FontFaceManager::load_font_faces()
 	{
 		if( !tools::is_file_readable( font.second ) )
 		{
-			wcout << "Failed to open font(" << font.first.c_str()
-			      << ") " << font.second.c_str() << "\n";
+			LOG( GENERAL, string_u8{ "Failed to open font(" } +font.first.c_str()
+				+ ") " + font.second.c_str() );
 			continue;
 		}
 
@@ -410,14 +411,14 @@ void FontFaceManager::load_font_faces()
 		}
 		catch( ... )
 		{
-			wcout << "Failed to load font(" << font.first.c_str()
-			      << ") " << font.second.c_str() << "\n";
+			LOG( GENERAL, string_u8{ "Failed to load font(" } +font.first.c_str()
+				+ ") " + font.second.c_str() );
 		}
 	}
 
 	if( !freetype_faces.size() )
 	{
-		wcout << "Warning: No fonts loaded. Expect the unexpected behaviour on their part.\n";
+		LOG( GENERAL, "Warning: No fonts loaded. Expect the unexpected behaviour on their part." );
 	}
 }
 

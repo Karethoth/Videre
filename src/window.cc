@@ -33,6 +33,7 @@ auto strncpy_s( char *dest, size_t destsz, const char *src, size_t count )
 }
 #endif
 
+
 Window::Window()
 : closed(false),
   sdl_id(0),
@@ -51,7 +52,6 @@ Window::Window()
 	if( window_ptr )
 	{
 		sdl_id = SDL_GetWindowID( window_ptr );
-		std::wcout << "Created window with id " << sdl_id << std::endl;
 		window = sdl2::WindowPtr( window_ptr );
 	}
 	else
@@ -62,7 +62,6 @@ Window::Window()
 	auto createContext = SDL_GL_CreateContext( window.get() );
 	if( !createContext )
 	{
-		wcout << SDL_GetError() << endl;
 		throw runtime_error{ string{ "Window::Window() - SDL_GL_CreateContext failed: " }.append( SDL_GetError() ) };
 	}
 
@@ -95,7 +94,6 @@ Window& Window::operator=( Window&& other )
 
 Window::~Window()
 {
-	wcout << "Closed window" << endl;
 }
 
 

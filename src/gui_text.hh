@@ -22,7 +22,7 @@ namespace gui
 	std::vector<glm::vec4> get_text_chararacter_rects(
 		FT_Face face,
 		string_unicode text,
-		size_t font_size,
+		unsigned font_size,
 		float scale = 1.f
 	);
 
@@ -40,21 +40,22 @@ namespace gui
 	GuiVec2 get_text_bounding_box(
 		FT_Face face,
 		string_unicode text,
-		size_t font_size
+		unsigned font_size
 	);
 
 
 
+	// Texture for single block/line of text
 	struct TextTexture
 	{
 		TextTexture(
 			const string_unicode text,
-			const size_t font_size,
+			const unsigned font_size,
 			const GuiVec2 texture_size
 		);
 
 		void set_text( const string_unicode text );
-		void set_font_size( const size_t size );
+		void set_font_size( const unsigned size );
 		void set_texture_size( const GuiVec2 texture_size );
 		void render( const GuiVec2 position, const GuiVec2 viewport_size, const glm::vec4 color ) const;
 		void reset_texture();
@@ -62,9 +63,26 @@ namespace gui
 	  protected:
 		gl::FramebufferObject framebuffer;
 		string_unicode content;
-		size_t font_size;
+		unsigned font_size;
 		glm::ivec2 texture_size;
 		void update_texture();
+	};
+
+
+
+	// A "conceptual" line of text, which can
+	// actually be wrapped on multiple lines,
+	// depending on how much room there is to
+	// display it
+	struct TextLine
+	{
+		string_unicode content;
+		unsigned font_size;
+		int row_max_width;
+		std::vector<TextTexture> textures;
+
+		void update();
+		void render( const GuiVec2 position, const GuiVec2 viewport_size, const glm::vec4 color ) const;
 	};
 
 
@@ -73,22 +91,22 @@ namespace gui
 	{
 		bool dynamic_font_size;
 
-		GuiLabel( string_unicode text = string_unicode{}, size_t size = 16 );
-		GuiLabel( string_u8 text, size_t size = 16 );
+		GuiLabel( string_unicode text = string_unicode{}, unsigned size = 16 );
+		GuiLabel( string_u8 text, unsigned size = 16 );
 		virtual ~GuiLabel();
 
 		virtual void render() const override;
 		virtual void handle_event( const GuiEvent &e ) override;
 		virtual GuiVec2 get_minimum_size() const override;
 
-		void set_font_size( size_t size );
+		void set_font_size( unsigned size );
 
 	  protected:
 		string_unicode content;
-		size_t font_size;
+		unsigned font_size;
 		GuiVec2 content_size;
 		TextTexture text_texture;
-		size_t used_font_size;
+		unsigned used_font_size;
 
 		void refresh();
 	};
@@ -98,7 +116,7 @@ namespace gui
 	struct TextInfo
 	{
 		string_unicode input;
-		size_t max_characters;
+		unsigned max_characters;
 
 
 		struct
@@ -149,7 +167,9 @@ namespace gui
 	struct GuiTextArea : GuiElement
 	{
 		string_unicode content;
-		size_t font_size;
+		unsigned font_size;
+
+		std::vector<TextLine> lines;
 
 		virtual ~GuiTextArea();
 
