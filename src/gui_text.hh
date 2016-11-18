@@ -73,15 +73,15 @@ namespace gui
 	// A "conceptual" line of text, which can
 	// actually be wrapped on multiple lines,
 	// depending on how much room there is to
-	// display it
+	// display it.
 	struct TextLine
 	{
-		string_unicode content;
-		unsigned font_size;
-		int row_max_width;
+		string_unicode content{};
 		std::vector<TextTexture> textures;
+		bool is_dirty;
 
-		void update();
+		TextLine( string_unicode text={} );
+		void update( const int row_max_width );
 		void render( const GuiVec2 position, const GuiVec2 viewport_size, const glm::vec4 color ) const;
 	};
 
@@ -118,7 +118,6 @@ namespace gui
 		string_unicode input;
 		unsigned max_characters;
 
-
 		struct
 		{
 			string_unicode text;
@@ -143,6 +142,35 @@ namespace gui
 	};
 
 
+	// Will replace TextInfo
+	struct TextState
+	{
+		struct
+		{
+			size_t row{ 0 };
+			size_t col{ 0 };
+			bool is_shown{ false };
+			std::chrono::steady_clock::time_point next_step;
+			std::chrono::milliseconds interval{ 500 };
+		} cursor;
+
+		struct
+		{
+			bool is_active{ false };
+			size_t start_row{ 0 };
+			size_t start_col{ 0 };
+			size_t end_row{ 0 };
+			size_t end_col{ 0 };
+		} selection;
+
+		struct
+		{
+			bool is_ime_on{ false };
+			size_t row{ 0 };
+			size_t col{ 0 };
+			string_unicode text;
+		} edit;
+	};
 
 	struct GuiTextField : GuiLabel
 	{
@@ -166,11 +194,12 @@ namespace gui
 
 	struct GuiTextArea : GuiElement
 	{
-		string_unicode content;
 		unsigned font_size;
 
-		std::vector<TextLine> lines;
+		std::vector<TextLine> lines{};
+		TextState text_state;
 
+		GuiTextArea();
 		virtual ~GuiTextArea();
 
 		virtual void render() const override;

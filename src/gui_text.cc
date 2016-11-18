@@ -1119,6 +1119,18 @@ void GuiTextField::update_content()
 
 
 
+TextLine::TextLine( string_unicode text ) : content{text}
+{
+}
+
+
+GuiTextArea::GuiTextArea()
+{
+	lines.emplace_back();
+}
+
+
+
 GuiTextArea::~GuiTextArea()
 {
 }
@@ -1150,7 +1162,7 @@ void GuiTextArea::render() const
 			return;
 		}
 
-		render_unicode( shader->second, content, cursor_pos, window->size, font_face.get() );
+		//render_unicode( shader->second, content, cursor_pos, window->size, font_face.get() );
 	}
 	catch( runtime_error &e )
 	{
@@ -1162,6 +1174,219 @@ void GuiTextArea::render() const
 
 void GuiTextArea::handle_event( const GuiEvent &e )
 {
-	GuiElement::handle_event( e );
+	auto do_update = false;
+
+	if( e.type == GuiEventType::TEXT_INPUT )
+	{
+		wcout << "Input: " << e.text_input.text << "\n";
+		
+		auto new_input = u8_to_unicode( e.text_input.text );
+		// Strip spaces from the input here because
+		// they are handled manually with the KEY events
+		// - TEXT_INPUT doesn't work with spaces when IME is on
+		new_input.erase(
+			std::remove_if(
+				new_input.begin(),
+				new_input.end(),
+				[]( auto c ) { return c == ' '; }
+			),
+			new_input.end()
+		);
+
+		auto& line = lines[text_state.cursor.row];
+
+		/*
+		if( text_state.selection.is_active )
+		{
+			state.input.erase(
+				state.input.begin() + state.selection.start,
+				state.input.begin() + state.selection.end
+			);
+			state.cursor.index = state.selection.start;
+		}
+		*/
+
+		text_state.selection.is_active = false;
+
+		line.content.insert(
+			line.content.begin() + text_state.cursor.col,
+			new_input.begin(),
+			new_input.end()
+		);
+
+		do_update = true;
+
+		// Update cursor position
+		text_state.cursor.col++;
+	}
+
+	else if( e.type == GuiEventType::TEXT_EDIT )
+	{
+		wcout << "Edit: " << e.text_edit.text << " " << e.text_edit.start << " " << e.text_edit.length << "\n";
+
+		// Insert the text before cursor
+
+		do_update = true;
+	}
+
+	else if( e.type == GuiEventType::KEY )
+	{
+		wcout << "Key: " << e.key.button.scancode << " " << e.key.state << "\n";
+
+		if( e.key.button.scancode == SDL_SCANCODE_RETURN &&
+		    e.key.state == GuiButtonState::PRESSED )
+		{
+			wcout << "Pressed enter\n";
+			auto& current_line = lines[text_state.cursor.row];
+
+			const auto rest_of_line = string_unicode{
+				current_line.content.begin() + text_state.cursor.col,
+				current_line.content.end()
+			};
+
+			current_line.content.erase(
+				current_line.content.begin() + text_state.cursor.col,
+				current_line.content.end()
+			);
+			current_line.is_dirty = true;
+
+			lines.insert(
+				lines.begin() + text_state.cursor.row + 1,
+				rest_of_line
+			);
+
+			text_state.cursor.row++;
+			text_state.cursor.col = 0;
+		}
+
+		else if( e.key.button.scancode == SDL_SCANCODE_BACKSPACE &&
+		         e.key.state == GuiButtonState::PRESSED )
+		{
+			if( text_state.cursor.col > 0 )
+			{
+				auto& current_line = lines[text_state.cursor.row];
+				auto it = current_line.content.begin() + text_state.cursor.col - 1;
+				current_line.content.erase( it );
+
+				text_state.cursor.col--;
+			}
+			else if( text_state.cursor.row > 0 )
+			{
+				const auto& current_line  = lines[text_state.cursor.row];
+				auto&       previous_line = lines[text_state.cursor.row-1];
+				const auto previous_line_length = lines[text_state.cursor.row-1].content.size();
+
+				previous_line.content.insert(
+					previous_line.content.end(),
+					current_line.content.cbegin(),
+					current_line.content.cend()
+				);
+				previous_line.is_dirty = true;
+
+				// Destroys the current_line
+				lines.erase(lines.begin() + text_state.cursor.row);
+
+				text_state.cursor.row--;
+				text_state.cursor.col = previous_line_length;
+			}
+
+		}
+
+		else if( e.key.button.scancode == SDL_SCANCODE_LEFT &&
+		         e.key.state == GuiButtonState::PRESSED )
+		{
+			if( text_state.cursor.col > 0 )
+			{
+				text_state.cursor.col--;
+			}
+			else if( text_state.cursor.row > 0 )
+			{
+				auto& previous_line = lines[text_state.cursor.row-1];
+				text_state.cursor.col = previous_line.content.size();
+				text_state.cursor.row--;
+
+			}
+		}
+
+		else if( e.key.button.scancode == SDL_SCANCODE_LEFT &&
+		         e.key.state == GuiButtonState::PRESSED )
+		{
+			if( text_state.cursor.col > 0 )
+			{
+				text_state.cursor.col--;
+			}
+			else if( text_state.cursor.row > 0 )
+			{
+				auto& previous_line = lines[text_state.cursor.row-1];
+				text_state.cursor.col = previous_line.content.size();
+				text_state.cursor.row--;
+
+			}
+		}
+
+		else if( e.key.button.scancode == SDL_SCANCODE_RIGHT &&
+		         e.key.state == GuiButtonState::PRESSED )
+		{
+			const auto line_count = lines.size();
+			const auto current_line_length = lines[text_state.cursor.row].content.size();
+
+			if( text_state.cursor.col < current_line_length )
+			{
+				text_state.cursor.col++;
+			}
+			else if( text_state.cursor.row < line_count-1 )
+			{
+				text_state.cursor.col = 0;
+				text_state.cursor.row++;
+			}
+		}
+
+		else if( e.key.button.scancode == SDL_SCANCODE_DELETE &&
+		         e.key.state == GuiButtonState::PRESSED )
+		{
+			const auto line_count = lines.size();
+			const auto current_line_length = lines[text_state.cursor.row].content.size();
+
+			auto& current_line = lines[text_state.cursor.row];
+
+			if( text_state.cursor.col < current_line_length )
+			{
+				current_line.content.erase( current_line.content.begin() + text_state.cursor.col );
+			}
+			else if( text_state.cursor.row < line_count-1 )
+			{
+				auto&       current_line = lines[text_state.cursor.row];
+				const auto& next_line    = lines[text_state.cursor.row+1];
+
+				current_line.content.insert(
+					current_line.content.end(),
+					next_line.content.cbegin(),
+					next_line.content.cend()
+				);
+				current_line.is_dirty = true;
+
+				// Destroys next_line
+				lines.erase( lines.begin() + text_state.cursor.row + 1 );
+			}
+		}
+
+		// Handle arrow keys, enter, backspace, delete, etc.
+		do_update = true;
+
+	}
+	
+	if( do_update )
+	{
+		//update_content();
+		wcout << "Contents: \n";
+		for( const auto& line : lines )
+		{
+			for( const auto& codepoint : line.content )
+			{
+				wcout << codepoint << " ";
+			}
+			wcout << "\n";
+		}
+	}
 }
 
