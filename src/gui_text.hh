@@ -57,7 +57,13 @@ namespace gui
 		void set_text( const string_unicode text );
 		void set_font_size( const unsigned size );
 		void set_texture_size( const GuiVec2 texture_size );
-		void render( const GuiVec2 position, const GuiVec2 viewport_size, const glm::vec4 color ) const;
+
+		void render(
+			const GuiVec2 position,
+			const GuiVec2 viewport_size, 
+			const glm::vec4 color
+		) const;
+
 		void reset_texture();
 
 	  protected:
@@ -81,8 +87,17 @@ namespace gui
 		bool is_dirty;
 
 		TextLine( string_unicode text={} );
-		void update( const int row_max_width );
-		void render( const GuiVec2 position, const GuiVec2 viewport_size, const glm::vec4 color ) const;
+
+		void update(
+			const int row_max_width,
+			const unsigned font_size
+		);
+
+		void render(
+			const GuiVec2 position,
+			const GuiVec2 viewport_size,
+			const glm::vec4 color
+		) const;
 	};
 
 

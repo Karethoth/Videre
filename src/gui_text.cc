@@ -321,7 +321,11 @@ void TextTexture::update_texture()
 
 
 
-void TextTexture::render( const GuiVec2 position, const GuiVec2 viewport_size, const glm::vec4 color ) const
+void TextTexture::render(
+	const GuiVec2 position,
+	const GuiVec2 viewport_size,
+	const glm::vec4 color
+) const
 {
 	auto shader = Globals::shaders.find( "2d" );
 	if( shader == Globals::shaders.end() )
@@ -1123,6 +1127,14 @@ TextLine::TextLine( string_unicode text ) : content{text}
 {
 }
 
+void TextLine::update(
+	const int row_max_width,
+	const unsigned font_size
+)
+{
+	// For now all textures get deleted
+}
+
 
 GuiTextArea::GuiTextArea()
 {
@@ -1248,7 +1260,7 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				current_line.content.begin() + text_state.cursor.col,
 				current_line.content.end()
 			);
-			current_line.is_dirty = true;
+			current_line.update( size.w, font_size );
 
 			lines.insert(
 				lines.begin() + text_state.cursor.row + 1,
@@ -1281,7 +1293,7 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 					current_line.content.cbegin(),
 					current_line.content.cend()
 				);
-				previous_line.is_dirty = true;
+				previous_line.update( size.w, font_size );
 
 				// Destroys the current_line
 				lines.erase(lines.begin() + text_state.cursor.row);
@@ -1363,7 +1375,7 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 					next_line.content.cbegin(),
 					next_line.content.cend()
 				);
-				current_line.is_dirty = true;
+				current_line.update( size.w, font_size );
 
 				// Destroys next_line
 				lines.erase( lines.begin() + text_state.cursor.row + 1 );

@@ -19,7 +19,7 @@ wstring tools::str::ltrim( wstring s )
 		std::find_if(
 			s.begin(),
 			s.end(),
-			not1( ptr_fun<int, int>( std::isspace ) )
+			not1( function<int(int)>( std::isspace ) )
 		)
 	);
 
@@ -33,7 +33,7 @@ wstring tools::str::rtrim( wstring s )
 		std::find_if(
 			s.rbegin(),
 			s.rend(),
-			not1( ptr_fun<int, int>( std::isspace ) )
+			not1( function<int(int)>( std::isspace ) )
 		).base(),
 		s.end()
 	);
