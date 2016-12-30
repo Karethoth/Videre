@@ -67,7 +67,7 @@ struct GuiPixelsOrPercentage
 };
 
 
-
+// TODO: Variant this?
 struct GuiEvent
 {
 	GuiEventType type;

@@ -47,7 +47,7 @@ void GuiButton::handle_event( const GuiEvent &e )
 
 		case MOUSE_ENTER:
 		case MOUSE_LEAVE:
-			for( auto child : children )
+			for( auto& child : children )
 			{
 				child->handle_event( e );
 			}
@@ -63,7 +63,7 @@ GuiVec2 GuiButton::get_minimum_size() const
 {
 	GuiVec2 minimum_size{ 0, 0 };
 
-	for( auto child : children )
+	for( auto& child : children )
 	{
 		const auto child_min_size = child->get_minimum_size();
 

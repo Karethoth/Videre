@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#define NOMINMAX
+#endif
+
 #include "gui_text.hh"
 #include "gui_gl.hh"
 #include "text_helpers.hh"
@@ -147,17 +151,6 @@ void gui::render_unicode(
 
 
 
-string_unicode gui::get_line_overflow(
-	string_unicode text,
-	float line_width,
-	FT_Face face
-)
-{
-	return {};
-}
-
-
-
 // TODO: Fix y-axis
 vector<glm::vec4> gui::get_text_chararacter_rects(
 	FT_Face face,
@@ -225,8 +218,8 @@ vector<glm::vec4> gui::get_text_chararacter_rects(
 
 GuiVec2 gui::get_text_bounding_box(
 	FT_Face face,
-	string_unicode text,
-	unsigned font_size
+	const string_unicode &text,
+	const unsigned font_size
 )
 {
 	float width = 0;
@@ -246,6 +239,37 @@ GuiVec2 gui::get_text_bounding_box(
 	}
 
 	return { tools::float_to_int(width), tools::float_to_int(height) };
+}
+
+
+string_unicode find_unsplit_text(
+	FT_Face face,
+	const string_unicode &text,
+	const unsigned font_size,
+	const float max_width
+)
+{
+	string_unicode fit_text{};
+	fit_text.reserve( text.size() );
+
+	size_t index = 0;
+
+	// TODO: find a good width from the face data
+	const auto static_char_width = font_size;
+
+	const auto rects = get_text_chararacter_rects( face, text, font_size );
+	for( const auto& rect : rects )
+	{
+		const auto code_point = text[index++];
+		const auto right_side = rect.x + static_char_width;
+
+		if( right_side <= max_width )
+		{
+			fit_text.push_back( code_point );
+		}
+	}
+
+	return fit_text;
 }
 
 
@@ -406,6 +430,7 @@ void TextTexture::render(
 GuiLabel::GuiLabel( string_unicode text, unsigned size )
 : content(text),
   font_size(size),
+  used_font_size(size),
   content_size(0, 0),
   dynamic_font_size(false),
   text_texture(text, size, get_minimum_size())
@@ -416,7 +441,8 @@ GuiLabel::GuiLabel( string_unicode text, unsigned size )
 
 GuiLabel::GuiLabel( string_u8 text, unsigned size )
 : content(u8_to_unicode( text )),
-  font_size(size ),
+  font_size(size),
+  used_font_size(size),
   content_size(0, 0),
   text_texture(content, size, {get_minimum_size()}),
   dynamic_font_size(false)
@@ -1132,7 +1158,41 @@ void TextLine::update(
 	const unsigned font_size
 )
 {
+	const auto font_face = Globals::font_face_manager.get_default_font_face().get();
+
 	// For now all textures get deleted
+	textures.clear();
+
+	// Split the line by how it should be wrapped
+	// TODO: Check if wrapping is enabled
+	const auto lines = tools::split<string_unicode>(
+		content,
+		[font_face, font_size, row_max_width]( const string_unicode &vec, size_t offset) -> size_t
+		{
+			const auto remaining_text = string_unicode{ vec.cbegin() + offset, vec.cend() };
+			const auto next_line = find_unsplit_text( font_face, remaining_text, font_size, row_max_width );
+			return offset + next_line.size();
+		}
+	);
+
+	for( auto& line : lines )
+	{
+		textures.emplace_back(
+			line,
+			font_size,
+			GuiVec2{ row_max_width, 2 * static_cast<const int>(font_size) }
+		);
+	}
+
+	// Create an empty texture if there are no lines
+	if( !lines.size() )
+	{
+		textures.push_back(
+			TextTexture{ content, font_size, { row_max_width, 2 * static_cast<const int>(font_size) } }
+		);
+
+		textures[0].reset_texture();
+	}
 }
 
 
@@ -1153,13 +1213,6 @@ void GuiTextArea::render() const
 {
 	try
 	{
-		const auto font_face = Globals::font_face_manager.get_default_font_face();
-		const auto padding = style.get( style_state ).padding;
-		const auto cursor_pos = GuiVec2(
-			tools::float_to_int( pos.x + padding.x ),
-			tools::float_to_int( pos.y + padding.w * 2 )
-		);
-
 		const auto window = dynamic_cast<const Window*>( get_root() );
 		if( !window )
 		{
@@ -1174,7 +1227,42 @@ void GuiTextArea::render() const
 			return;
 		}
 
+		const auto font_face = Globals::font_face_manager.get_default_font_face();
+		const auto padding = style.get( style_state ).padding;
+		const auto cursor_pos = GuiVec2(
+			tools::float_to_int( pos.x + padding.x ),
+			tools::float_to_int( window->size.h - pos.y - font_size - padding.w * 2 )
+		);
+
 		//render_unicode( shader->second, content, cursor_pos, window->size, font_face.get() );
+
+		const auto texture_vecs = tools::map_vector<
+			const vector<TextLine>&,
+			vector<const TextTexture*>,
+			const TextLine&
+		>
+		(
+			lines,
+			[]( const TextLine& line ) -> vector<const TextTexture*>
+			{
+				vector<const TextTexture*> ptrs;
+				ptrs.reserve( line.textures.size() ) ;
+				for( const auto& texture : line.textures )
+				{
+					ptrs.push_back( &texture );
+				}
+				return ptrs;
+			}
+		);
+
+		const auto textures = tools::flatten( texture_vecs );
+
+		auto render_pos = cursor_pos;
+		for( auto& line_texture : textures )
+		{
+			line_texture->render( render_pos, window->size, { 1.f, 1.f, 1.f, 1.f } );
+			render_pos.y -= font_size;
+		}
 	}
 	catch( runtime_error &e )
 	{
@@ -1196,6 +1284,7 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 		// Strip spaces from the input here because
 		// they are handled manually with the KEY events
 		// - TEXT_INPUT doesn't work with spaces when IME is on
+		/*
 		new_input.erase(
 			std::remove_if(
 				new_input.begin(),
@@ -1204,6 +1293,7 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 			),
 			new_input.end()
 		);
+		*/
 
 		auto& line = lines[text_state.cursor.row];
 
@@ -1222,33 +1312,35 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 
 		line.content.insert(
 			line.content.begin() + text_state.cursor.col,
-			new_input.begin(),
-			new_input.end()
+			new_input.cbegin(),
+			new_input.cend()
 		);
 
+		line.is_dirty = true;
 		do_update = true;
 
 		// Update cursor position
 		text_state.cursor.col++;
+		text_state.cursor.target_col = text_state.cursor.col;
 	}
 
 	else if( e.type == GuiEventType::TEXT_EDIT )
 	{
 		wcout << "Edit: " << e.text_edit.text << " " << e.text_edit.start << " " << e.text_edit.length << "\n";
 
-		// Insert the text before cursor
+		// TODO: Insert the text before cursor
 
-		do_update = true;
+		if( e.text_edit.length )
+		{
+			do_update = true;
+		}
 	}
 
 	else if( e.type == GuiEventType::KEY )
 	{
-		wcout << "Key: " << e.key.button.scancode << " " << e.key.state << "\n";
-
 		if( e.key.button.scancode == SDL_SCANCODE_RETURN &&
 		    e.key.state == GuiButtonState::PRESSED )
 		{
-			wcout << "Pressed enter\n";
 			auto& current_line = lines[text_state.cursor.row];
 
 			const auto rest_of_line = string_unicode{
@@ -1267,8 +1359,12 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				rest_of_line
 			);
 
+			lines[text_state.cursor.row + 1].is_dirty = true;
+
 			text_state.cursor.row++;
 			text_state.cursor.col = 0;
+			text_state.cursor.target_col = text_state.cursor.col;
+			do_update = true;
 		}
 
 		else if( e.key.button.scancode == SDL_SCANCODE_BACKSPACE &&
@@ -1279,6 +1375,7 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				auto& current_line = lines[text_state.cursor.row];
 				auto it = current_line.content.begin() + text_state.cursor.col - 1;
 				current_line.content.erase( it );
+				current_line.is_dirty = true;
 
 				text_state.cursor.col--;
 			}
@@ -1302,6 +1399,8 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				text_state.cursor.col = previous_line_length;
 			}
 
+			text_state.cursor.target_col = text_state.cursor.col;
+			do_update = true;
 		}
 
 		else if( e.key.button.scancode == SDL_SCANCODE_LEFT &&
@@ -1318,6 +1417,9 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				text_state.cursor.row--;
 
 			}
+
+			text_state.cursor.target_col = text_state.cursor.col;
+			do_update = true;
 		}
 
 		else if( e.key.button.scancode == SDL_SCANCODE_LEFT &&
@@ -1334,6 +1436,9 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				text_state.cursor.row--;
 
 			}
+
+			text_state.cursor.target_col = text_state.cursor.col;
+			do_update = true;
 		}
 
 		else if( e.key.button.scancode == SDL_SCANCODE_RIGHT &&
@@ -1351,6 +1456,45 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				text_state.cursor.col = 0;
 				text_state.cursor.row++;
 			}
+
+			text_state.cursor.target_col = text_state.cursor.col;
+			do_update = true;
+		}
+
+		else if( e.key.button.scancode == SDL_SCANCODE_UP &&
+		         e.key.state == GuiButtonState::PRESSED )
+		{
+			if( text_state.cursor.row > 0 )
+			{
+				text_state.cursor.row--;
+			}
+
+			text_state.cursor.col = text_state.cursor.target_col;
+			const auto& tgt_line = lines[text_state.cursor.row];
+			if( tgt_line.content.size() <= text_state.cursor.col )
+			{
+				text_state.cursor.col = tgt_line.content.size();
+			}
+
+			do_update = true;
+		}
+
+		else if( e.key.button.scancode == SDL_SCANCODE_DOWN &&
+		         e.key.state == GuiButtonState::PRESSED )
+		{
+			if( text_state.cursor.row < lines.size()-1 )
+			{
+				text_state.cursor.row++;
+			}
+
+			text_state.cursor.col = text_state.cursor.target_col;
+			const auto& tgt_line = lines[text_state.cursor.row];
+			if( tgt_line.content.size() <= text_state.cursor.col )
+			{
+				text_state.cursor.col = tgt_line.content.size();
+			}
+
+			do_update = true;
 		}
 
 		else if( e.key.button.scancode == SDL_SCANCODE_DELETE &&
@@ -1364,6 +1508,7 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 			if( text_state.cursor.col < current_line_length )
 			{
 				current_line.content.erase( current_line.content.begin() + text_state.cursor.col );
+				current_line.is_dirty = true;
 			}
 			else if( text_state.cursor.row < line_count-1 )
 			{
@@ -1380,24 +1525,41 @@ void GuiTextArea::handle_event( const GuiEvent &e )
 				// Destroys next_line
 				lines.erase( lines.begin() + text_state.cursor.row + 1 );
 			}
+
+			text_state.cursor.target_col = text_state.cursor.col;
+			do_update = true;
 		}
+	}
+	else
+	{
+		GuiElement::handle_event( e );
+	}
 
-		// Handle arrow keys, enter, backspace, delete, etc.
+	if( e.type == RESIZE )
+	{
 		do_update = true;
-
+		for( auto& line : lines )
+		{
+			line.is_dirty = true;
+		}
 	}
 	
 	if( do_update )
 	{
-		//update_content();
-		wcout << "Contents: \n";
-		for( const auto& line : lines )
+		update_content();
+	}
+}
+
+
+
+void GuiTextArea::update_content()
+{
+	for( auto& text_line : lines )
+	{
+		if( text_line.is_dirty )
 		{
-			for( const auto& codepoint : line.content )
-			{
-				wcout << codepoint << " ";
-			}
-			wcout << "\n";
+			text_line.update( size.w, font_size );
+			text_line.is_dirty = false;
 		}
 	}
 }

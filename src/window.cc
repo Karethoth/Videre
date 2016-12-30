@@ -122,162 +122,162 @@ void Window::handle_sdl_event( const SDL_Event &e )
 
 	switch( e.type )
 	{
-		case SDL_WINDOWEVENT:
-			switch( e.window.event )
-			{
-				case SDL_WINDOWEVENT_SHOWN:
-				case SDL_WINDOWEVENT_EXPOSED:
-				case SDL_WINDOWEVENT_MOVED:
-				case SDL_WINDOWEVENT_MINIMIZED:
-				case SDL_WINDOWEVENT_MAXIMIZED:
-				case SDL_WINDOWEVENT_RESTORED:
-				case SDL_WINDOWEVENT_FOCUS_LOST:
-				case SDL_WINDOWEVENT_FOCUS_GAINED:
-					break;
-
-				case SDL_WINDOWEVENT_RESIZED:
-				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					min_size = get_minimum_size();
-					size = { e.window.data1, e.window.data2 };
-					if( size.w < min_size.w )
-					{
-						size.w = min_size.w;
-						SDL_SetWindowMinimumSize( window.get(), min_size.w, min_size.h );
-						return;
-					}
-
-					if( size.h < min_size.h )
-					{
-						size.h = min_size.h;
-						SDL_SetWindowMinimumSize( window.get(), min_size.w, min_size.h );
-						return;
-					}
-
-					gui_event.type = RESIZE;
-					gui_event.resize.size = size;
-					handle_event( gui_event );
-					break;
-
-
-				case SDL_WINDOWEVENT_HIDDEN:
-				case SDL_WINDOWEVENT_LEAVE:
-					gui_event.type = WINDOW_BLUR;
-					handle_event( gui_event );
-					break;
-
-				case SDL_WINDOWEVENT_ENTER:
-					gui_event.type = WINDOW_FOCUS;
-					handle_event( gui_event );
-					break;
-
-				case SDL_WINDOWEVENT_CLOSE:
-					closed = true;
-					break;
-			}
+	  case SDL_WINDOWEVENT:
+		switch( e.window.event )
+		{
+		case SDL_WINDOWEVENT_SHOWN:
+		case SDL_WINDOWEVENT_EXPOSED:
+		case SDL_WINDOWEVENT_MOVED:
+		case SDL_WINDOWEVENT_MINIMIZED:
+		case SDL_WINDOWEVENT_MAXIMIZED:
+		case SDL_WINDOWEVENT_RESTORED:
+		case SDL_WINDOWEVENT_FOCUS_LOST:
+		case SDL_WINDOWEVENT_FOCUS_GAINED:
 			break;
 
-		case SDL_MOUSEMOTION:
-			if( mouse_down )
+		case SDL_WINDOWEVENT_RESIZED:
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
+			min_size = get_minimum_size();
+			size = { e.window.data1, e.window.data2 };
+			if( size.w < min_size.w )
 			{
-				mouse_dragged                    = true;
-				gui_event.type                   = MOUSE_DRAG;
-				gui_event.mouse_drag.pos_start   = mouse_down_pos;
-				gui_event.mouse_drag.pos_current = { e.motion.x, e.motion.y };
-				gui_event.mouse_drag.button      = mouse_down_button;
+				size.w = min_size.w;
+				SDL_SetWindowMinimumSize( window.get(), min_size.w, min_size.h );
+				return;
 			}
-			else
+
+			if( size.h < min_size.h )
 			{
-				mouse_dragged            = false;
-				gui_event.type           = MOUSE_MOVE;
-				gui_event.mouse_move.pos = { e.motion.x, e.motion.y };
+				size.h = min_size.h;
+				SDL_SetWindowMinimumSize( window.get(), min_size.w, min_size.h );
+				return;
 			}
+
+			gui_event.type = RESIZE;
+			gui_event.resize.size = size;
 			handle_event( gui_event );
 			break;
 
-		case SDL_MOUSEBUTTONUP:
-			mouse_down = false;
-			if( !mouse_dragged )
-			{
-				gui_event.type                = MOUSE_BUTTON;
-				gui_event.mouse_button.button = e.button.button;
-				gui_event.mouse_button.state  = RELEASED;
-				gui_event.mouse_button.pos    = { e.button.x, e.button.y };
-			}
-			else
-			{
-				mouse_dragged = false;
-				gui_event.type                     = MOUSE_DRAG_END;
-				gui_event.mouse_drag_end.button    = e.button.button;
-				gui_event.mouse_drag_end.pos_start = mouse_down_pos;
-				gui_event.mouse_drag_end.pos_end   = { e.button.x, e.button.y };
-			}
+
+		case SDL_WINDOWEVENT_HIDDEN:
+		case SDL_WINDOWEVENT_LEAVE:
+			gui_event.type = WINDOW_BLUR;
 			handle_event( gui_event );
 			break;
 
-		case SDL_MOUSEBUTTONDOWN:
-			mouse_down        = true;
-			mouse_down_button = e.button.button;
-			mouse_down_pos    = { e.button.x, e.button.y };
-
-			if( last_mouse_down + mouse_double_click_threshold > chrono::steady_clock::now() )
-			{
-				gui_event.type                      = MOUSE_DOUBLE_CLICK;
-				gui_event.mouse_double_click.button = e.button.button;
-				gui_event.mouse_double_click.pos    = { e.button.x, e.button.y };
-			}
-			else
-			{
-				last_mouse_down               = chrono::steady_clock::now();
-				gui_event.type                = MOUSE_BUTTON;
-				gui_event.mouse_button.button = e.button.button;
-				gui_event.mouse_button.state  = PRESSED;
-				gui_event.mouse_button.pos    = { e.button.x, e.button.y };
-			}
+		case SDL_WINDOWEVENT_ENTER:
+			gui_event.type = WINDOW_FOCUS;
 			handle_event( gui_event );
 			break;
 
-		case SDL_MOUSEWHEEL:
-			gui_event.type = MOUSE_SCROLL;
-			SDL_GetMouseState( &gui_event.mouse_scroll.pos.x, &gui_event.mouse_scroll.pos.y );
-			gui_event.mouse_scroll.direction = (e.wheel.y > 0) ?
-				gui::GuiDirection::NORTH :
-				gui::GuiDirection::SOUTH;
-			gui_event.mouse_scroll.value = abs( e.wheel.y );
-			handle_event( gui_event );
+		case SDL_WINDOWEVENT_CLOSE:
+			closed = true;
 			break;
+		}
+		break;
 
-		case SDL_TEXTINPUT:
-			gui_event.type = TEXT_INPUT;
-			strncpy_s(
-				gui_event.text_input.text,
-				sizeof gui_event.text_input.text,
-				e.text.text,
+	  case SDL_MOUSEMOTION:
+		if( mouse_down )
+		{
+			mouse_dragged = true;
+			gui_event.type = MOUSE_DRAG;
+			gui_event.mouse_drag.pos_start = mouse_down_pos;
+			gui_event.mouse_drag.pos_current = { e.motion.x, e.motion.y };
+			gui_event.mouse_drag.button = mouse_down_button;
+		}
+		else
+		{
+			mouse_dragged = false;
+			gui_event.type = MOUSE_MOVE;
+			gui_event.mouse_move.pos = { e.motion.x, e.motion.y };
+		}
+		handle_event( gui_event );
+		break;
+
+	  case SDL_MOUSEBUTTONUP:
+		mouse_down = false;
+		if( !mouse_dragged )
+		{
+			gui_event.type = MOUSE_BUTTON;
+			gui_event.mouse_button.button = e.button.button;
+			gui_event.mouse_button.state = RELEASED;
+			gui_event.mouse_button.pos = { e.button.x, e.button.y };
+		}
+		else
+		{
+			mouse_dragged = false;
+			gui_event.type = MOUSE_DRAG_END;
+			gui_event.mouse_drag_end.button = e.button.button;
+			gui_event.mouse_drag_end.pos_start = mouse_down_pos;
+			gui_event.mouse_drag_end.pos_end = { e.button.x, e.button.y };
+		}
+		handle_event( gui_event );
+		break;
+
+	  case SDL_MOUSEBUTTONDOWN:
+		mouse_down = true;
+		mouse_down_button = e.button.button;
+		mouse_down_pos = { e.button.x, e.button.y };
+
+		if( last_mouse_down + mouse_double_click_threshold > chrono::steady_clock::now() )
+		{
+			gui_event.type = MOUSE_DOUBLE_CLICK;
+			gui_event.mouse_double_click.button = e.button.button;
+			gui_event.mouse_double_click.pos = { e.button.x, e.button.y };
+		}
+		else
+		{
+			last_mouse_down = chrono::steady_clock::now();
+			gui_event.type = MOUSE_BUTTON;
+			gui_event.mouse_button.button = e.button.button;
+			gui_event.mouse_button.state = PRESSED;
+			gui_event.mouse_button.pos = { e.button.x, e.button.y };
+		}
+		handle_event( gui_event );
+		break;
+
+	  case SDL_MOUSEWHEEL:
+		gui_event.type = MOUSE_SCROLL;
+		SDL_GetMouseState( &gui_event.mouse_scroll.pos.x, &gui_event.mouse_scroll.pos.y );
+		gui_event.mouse_scroll.direction = (e.wheel.y > 0) ?
+			gui::GuiDirection::NORTH :
+			gui::GuiDirection::SOUTH;
+		gui_event.mouse_scroll.value = abs( e.wheel.y );
+		handle_event( gui_event );
+		break;
+
+	  case SDL_TEXTINPUT:
+		gui_event.type = TEXT_INPUT;
+		strncpy_s(
+			&gui_event.text_input.text[0],
+			sizeof gui_event.text_input.text,
+			&e.text.text[0],
 				sizeof gui_event.text_input.text
-			);
-			handle_event( gui_event );
-			break;
+		);
+		handle_event( gui_event );
+		break;
 
-		case SDL_TEXTEDITING:
-			gui_event.type = TEXT_EDIT;
-			strncpy_s(
-				gui_event.text_edit.text,
-				sizeof gui_event.text_input.text,
-				e.text.text,
-				sizeof gui_event.text_edit.text
-			);
-			gui_event.text_edit.start = e.edit.start;
-			gui_event.text_edit.length = e.edit.length;
-			handle_event( gui_event );
-			break;
+	  case SDL_TEXTEDITING:
+		gui_event.type = TEXT_EDIT;
+		strncpy_s(
+			&gui_event.text_edit.text[0],
+			sizeof gui_event.text_input.text,
+			&e.text.text[0],
+			sizeof gui_event.text_edit.text
+		);
+		gui_event.text_edit.start = e.edit.start;
+		gui_event.text_edit.length = e.edit.length;
+		handle_event( gui_event );
+		break;
 
-		case SDL_KEYUP:
-		case SDL_KEYDOWN:
-			gui_event.type = KEY;
-			gui_event.key.state = e.key.state == SDL_PRESSED ? PRESSED : RELEASED;
-			gui_event.key.button = e.key.keysym;
-			gui_event.key.is_repeat = e.key.repeat != 0;
-			handle_event( gui_event );
-			break;
+	  case SDL_KEYUP:
+	  case SDL_KEYDOWN:
+		gui_event.type = KEY;
+		gui_event.key.state = e.key.state == SDL_PRESSED ? PRESSED : RELEASED;
+		gui_event.key.button = e.key.keysym;
+		gui_event.key.is_repeat = e.key.repeat != 0;
+		handle_event( gui_event );
+		break;
 	}
 }
 

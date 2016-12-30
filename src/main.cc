@@ -44,7 +44,6 @@ using namespace std;
 
 void handle_sdl_event( const SDL_Event &e )
 {
-
 	try
 	{
 		if( e.type == SDL_QUIT )
@@ -357,11 +356,15 @@ int main( int argc, char **argv )
 	// Set up the GUI
 	{
 		auto split_layout = make_shared<gui::SplitLayout>();
+
 		split_layout->create_children = []
 		{
+			auto text_area = make_shared<gui::GuiTextArea>();
+			text_area->font_size = 12;
+
 			return gui::GuiElementPtrPair(
 				make_shared<VectorGraphicsEditor>(),
-				make_shared<gui::GuiTextArea>()
+				text_area
 			);
 		};
 

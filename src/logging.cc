@@ -14,10 +14,10 @@ namespace
 {
 	string_u8 filepath_to_filename( const string_u8 &filepath )
 	{
-		const char delim_unix[] = { '/' };
-		const char delim_win[] = { '\\' };
-		const auto end_unix = std::find_end( filepath.cbegin(), filepath.cend(), delim_unix, delim_unix+1 );
-		const auto end_win = std::find_end( filepath.cbegin(), filepath.cend(), delim_win, delim_win+1 );
+		const char delim_unix[] = { '/', 0x00 };
+		const char delim_win[] = { '\\', 0x00 };
+		const auto end_unix = std::find_end( filepath.cbegin(), filepath.cend(), &delim_unix[0], &delim_unix[1] );
+		const auto end_win = std::find_end( filepath.cbegin(), filepath.cend(), &delim_win[0], &delim_win[1] );
 		const auto end = (end_unix != filepath.cend() && end_unix > end_win) ? end_unix : end_win;
 
 		if( end != filepath.cend() )
@@ -29,7 +29,7 @@ namespace
 
 	string_u8 timestamp()
 	{
-		struct tm tmp;
+		struct tm tmp{};
 		std::time_t t = std::time( nullptr );
 		localtime_s( &tmp, &t );
 		const auto stamp = std::put_time( &tmp, "%Y-%m-%d-%H:%M:%S%z" );
@@ -46,8 +46,8 @@ decltype(Logger::log_files) Logger::log_files;
 decltype(Logger::log_files_mutex) Logger::log_files_mutex;
 
 
-LogFile::LogFile( std::string _path ) : path{ _path }, stream{ _path } {}
-LogFile::LogFile( LogFile &_other ) : path{_other.path}, stream{_other.path} { }
+LogFile::LogFile( std::string _path ) : path{_path}, stream{_path} {}
+LogFile::LogFile( LogFile &_other ) : path{_other.path}, stream{_other.path} {}
 
 
 void LogFile::write( const string_u8 &text ) const

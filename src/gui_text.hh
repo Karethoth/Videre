@@ -27,20 +27,12 @@ namespace gui
 	);
 
 
-	// Get line overflow
-	string_unicode get_line_overflow(
-		string_unicode text,
-		float line_width,
-		FT_Face face
-	);
 
-
-
-	// Get line overflow
+	// Get bounding box for text
 	GuiVec2 get_text_bounding_box(
 		FT_Face face,
-		string_unicode text,
-		unsigned font_size
+		const string_unicode &text,
+		const unsigned font_size
 	);
 
 
@@ -131,12 +123,12 @@ namespace gui
 	struct TextInfo
 	{
 		string_unicode input;
-		unsigned max_characters;
+		unsigned max_characters{ 1 };
 
 		struct
 		{
 			string_unicode text;
-			bool   is_ime_on;
+			bool   is_ime_on{ false };
 		} edit;
 
 		struct
@@ -164,6 +156,7 @@ namespace gui
 		{
 			size_t row{ 0 };
 			size_t col{ 0 };
+			size_t target_col{ 0 };
 			bool is_shown{ false };
 			std::chrono::steady_clock::time_point next_step;
 			std::chrono::milliseconds interval{ 500 };
@@ -219,6 +212,9 @@ namespace gui
 
 		virtual void render() const override;
 		virtual void handle_event( const GuiEvent &e ) override;
+
+	  protected:
+		void update_content();
 	};
 }
 

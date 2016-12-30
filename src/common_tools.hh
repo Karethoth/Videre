@@ -27,6 +27,115 @@ using can_call = decltype(can_call_test::f<F>( 0 ));
 
 
 
+// Flatten - vector<vector<X>> -> vector<X>
+template<
+	typename VectorType,
+	typename ValueType=VectorType::value_type::value_type
+>
+std::vector<ValueType> flatten( VectorType vec )
+{
+	std::vector<ValueType> flattened;
+
+	for( auto& sub_vec : vec )
+	{
+		flattened.insert( flattened.end(), sub_vec.cbegin(), sub_vec.cend() );
+	}
+
+	return flattened;
+}
+
+
+
+// Map
+template<
+	typename VectorType,
+	typename TargetType,
+	typename SourceType=VectorType::value_type
+>
+std::vector<TargetType> map_vector(
+	VectorType vec,
+	std::function<TargetType( SourceType )> transform
+)
+{
+	std::vector<TargetType> mapped;
+
+	for( SourceType element : vec )
+	{
+		mapped.push_back( transform( element ) );
+	}
+
+	return mapped;
+}
+
+
+
+// Helpers for splitting
+template<typename VectorType>
+std::vector<VectorType> split(
+	const VectorType &vec,
+	std::function<size_t( const VectorType&, size_t )> find_split_index
+)
+{
+	size_t offset = 0;
+	std::vector<VectorType> parts;
+
+	while( offset < vec.size() )
+	{
+		const auto index = find_split_index( vec, offset );
+
+		parts.emplace_back(
+			vec.cbegin() + offset,
+			vec.cbegin() + index
+		);
+
+		offset = index;
+	}
+
+	return parts;
+}
+
+
+template<typename StringType, typename CharType=StringType::value_type>
+std::vector<StringType> split_string(
+	const StringType &str,
+	const CharType separator
+)
+{
+	std::istringstream iss{ str };
+
+	std::vector<StringType> tokens {
+		istream_iterator<StringType>{iss},
+		istream_iterator<StringType>{}
+	};
+
+	return tokens;
+}
+
+template<typename StringType, typename CharType=StringType::value_type>
+std::vector<StringType> split_strings(
+	const std::vector<StringType> &vec,
+	const CharType separator
+)
+{
+	std::vector<StringType> all_tokens;
+
+	for( auto& str : vec )
+	{
+		std::istringstream iss{ str };
+
+		std::vector<StringType> tokens {
+			istream_iterator<StringType>{iss},
+			istream_iterator<StringType>{}
+		};
+
+		vec.insert( vec.end(), tokens.begin(), tokens.end() );
+	}
+
+	return all_tokens;
+}
+
+
+
 // Defer
 // - When the Defer falls out of scope, it executes
 //   the function that was given to the constructor

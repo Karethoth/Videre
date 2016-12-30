@@ -240,7 +240,7 @@ void GuiElement::handle_event( const GuiEvent &e )
 	}
 
 	gui::any_gl_errors();
-	for( auto child : children )
+	for( auto &child : children )
 	{
 		child->handle_event( e );
 	}
