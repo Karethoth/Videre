@@ -1,5 +1,5 @@
 CC        := g++
-INCLUDES  := -Iinclude/json/src -Iinclude/GSL/include
+INCLUDES  := -Iinclude/json/src -Iinclude/GSL/include -Iinclude/glm -I/usr/include/freetype2
 LD_FLAGS  := -O2
 LD_LIBS   := -lGLU -lGL -lGLEW -lglut -lSDL2 -lSDL2_image `freetype-config --libs` -lpthread
 CC_FLAGS  := -std=c++14 $(INCLUDES)

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <algorithm>
 
+#define GLM_ENABLE_EXPERIMENTAL 1
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/vector_angle.hpp>

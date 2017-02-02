@@ -26,6 +26,7 @@ namespace logging
 	  public:
 		LogFile( std::string _path );
 		LogFile( LogFile& );
+		LogFile( LogFile&& );
 
 		void write( const string_u8 &text ) const;
 	};
@@ -42,7 +43,7 @@ namespace logging
 		static void log( const LogCategory category, const string_u8 text, const string_u8 filepath, const int line );
 	};
 
-	#define LOG(CATEGORY, TEXT) logging::Logger::log(logging::LogCategory::##CATEGORY, TEXT, __FILE__, __LINE__)
+	#define LOG(CATEGORY, TEXT) logging::Logger::log(logging::LogCategory::CATEGORY, TEXT, __FILE__, __LINE__)
 };
 
 
