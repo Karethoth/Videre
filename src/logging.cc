@@ -29,10 +29,15 @@ namespace
 
 	string_u8 timestamp()
 	{
-		struct tm tmp{};
 		std::time_t t = std::time( nullptr );
+
+#ifdef _WIN32
+		struct tm tmp;
 		localtime_s( &tmp, &t );
 		const auto stamp = std::put_time( &tmp, "%Y-%m-%d-%H:%M:%S%z" );
+#else
+		const auto stamp = std::put_time( localtime( &t ), "%Y-%m-%d-%H:%M:%S%z" );
+#endif
 
 		std::stringstream iss;
 		iss << stamp;
@@ -45,9 +50,9 @@ namespace
 decltype(Logger::log_files) Logger::log_files;
 decltype(Logger::log_files_mutex) Logger::log_files_mutex;
 
-
-LogFile::LogFile( std::string _path ) : path{_path}, stream{_path} {}
-LogFile::LogFile( LogFile &_other ) : path{_other.path}, stream{_other.path} {}
+LogFile::LogFile( std::string _path ) : path{ _path }, stream{ _path } {}
+LogFile::LogFile( LogFile &_other ) : path{_other.path}, stream{_other.path} { }
+LogFile::LogFile( LogFile &&_other ) : path{std::move(_other.path)}, stream{std::move(_other.stream)} { }
 
 
 void LogFile::write( const string_u8 &text ) const
@@ -60,7 +65,8 @@ void LogFile::write( const string_u8 &text ) const
 void Logger::add_log_file( const LogCategory category, std::string path )
 {
 	std::lock_guard<std::mutex> log_files_lock{ Logger::log_files_mutex };
-	Logger::log_files[category].emplace_back( path );
+	auto &tmp = Logger::log_files[category];
+	tmp.emplace_back( path );
 }
 
 

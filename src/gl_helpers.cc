@@ -4,6 +4,8 @@
 #include "mesh.hh"
 
 #include <iostream>
+
+#define GLM_ENABLE_EXPERIMENTAL 1
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/vector_angle.hpp>
 
