@@ -29,15 +29,9 @@ namespace
 
 	string_u8 timestamp()
 	{
-		std::time_t t = std::time( nullptr );
-
-#ifdef _WIN32
 		struct tm tmp;
-		localtime_s( &tmp, &t );
-		const auto stamp = std::put_time( &tmp, "%Y-%m-%d-%H:%M:%S%z" );
-#else
+		std::time_t t = std::time( nullptr );
 		const auto stamp = std::put_time( localtime( &t ), "%Y-%m-%d-%H:%M:%S%z" );
-#endif
 
 		std::stringstream iss;
 		iss << stamp;
@@ -50,9 +44,9 @@ namespace
 decltype(Logger::log_files) Logger::log_files;
 decltype(Logger::log_files_mutex) Logger::log_files_mutex;
 
+
 LogFile::LogFile( std::string _path ) : path{ _path }, stream{ _path } {}
 LogFile::LogFile( LogFile &_other ) : path{_other.path}, stream{_other.path} { }
-LogFile::LogFile( LogFile &&_other ) : path{std::move(_other.path)}, stream{std::move(_other.stream)} { }
 
 
 void LogFile::write( const string_u8 &text ) const

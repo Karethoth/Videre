@@ -1559,7 +1559,7 @@ void GuiTextArea::update_content()
 		if( text_line.is_dirty )
 		{
 			text_line.update( size.w, font_size );
-			text_line.is_dirty = false;
+	text_line.is_dirty = false;
 		}
 	}
 }
